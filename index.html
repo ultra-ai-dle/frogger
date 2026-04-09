@@ -1,0 +1,914 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Prova MVP</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap");
+
+      :root {
+        --bg: #0d1117;
+        --panel: #161b22;
+        --muted: #8b949e;
+        --line: #30363d;
+        --text: #e6edf3;
+        --green: #3fb950;
+        --green-deep: #0d4429;
+        --amber: #e3b341;
+        --amber-bg: #5a3600;
+        --blue: #1d4ed8;
+        --purple: #8b5cf6;
+        --red: #da3633;
+        --red-bg: #5a1212;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "Pretendard", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+
+      .app {
+        height: 100vh;
+        display: grid;
+        grid-template-rows: auto auto 1fr auto auto;
+      }
+
+      .top-progress {
+        height: 3px;
+        background: linear-gradient(90deg, #58a6ff 0%, #3fb950 50%, #58a6ff 100%);
+        background-size: 200% 100%;
+        animation: shimmer 1.2s linear infinite;
+        opacity: 0;
+      }
+      .top-progress.running { opacity: 1; }
+
+      .system-banner {
+        min-height: 36px;
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 14px;
+        font-size: 13px;
+      }
+      .system-banner.visible { display: flex; }
+      .system-banner.loading { background: #3d2b00; color: var(--amber); }
+      .system-banner.data { background: #7c4a00; color: #ffe09a; }
+      .system-banner.error { background: var(--red-bg); color: #ffc1c1; }
+
+      header {
+        height: 48px;
+        border-bottom: 1px solid var(--line);
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;
+        padding: 0 14px;
+      }
+      .logo { font-weight: 700; }
+      .logo span { color: var(--green); }
+      .header-center {
+        justify-self: center;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 5px 12px;
+        font-size: 12px;
+      }
+      .header-center.active {
+        border-color: var(--green);
+        background: #1a4731;
+      }
+      .header-right {
+        justify-self: end;
+        color: var(--muted);
+      }
+
+      .workspace {
+        display: grid;
+        grid-template-columns: 30% 45% 25%;
+        min-height: 0;
+      }
+      .pane {
+        border-right: 1px solid var(--line);
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+      }
+      .pane:last-child { border-right: none; }
+
+      .section-title {
+        font-size: 12px;
+        color: var(--muted);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        margin: 12px 14px 8px;
+      }
+
+      .editor-wrap {
+        margin: 0 14px 10px;
+        border: 1px solid var(--line);
+        background: #0f141a;
+        border-radius: 10px;
+        min-height: 0;
+        flex: 1;
+        overflow: auto;
+      }
+      .editor-line {
+        display: grid;
+        grid-template-columns: 34px 1fr;
+        gap: 10px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 13px;
+        line-height: 1.65;
+        padding: 2px 10px;
+        color: #c9d1d9;
+      }
+      .editor-line .ln { color: #6e7681; text-align: right; }
+      .editor-line.current { background: rgba(240, 230, 140, 0.2); border-left: 2px solid #f0e68c; }
+      .editor-line.error { background: rgba(218, 54, 51, 0.2); border-left: 2px solid var(--red); }
+      .editor-badge {
+        margin: 0 14px 14px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--muted);
+        font-size: 11px;
+        padding: 6px 10px;
+      }
+
+      .center-body {
+        margin: 0 14px 14px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: #1c2128;
+        min-height: 0;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .placeholder {
+        height: 100%;
+        display: grid;
+        place-items: center;
+        text-align: center;
+        color: var(--muted);
+        padding: 20px;
+      }
+      .viz-grid {
+        margin: 18px;
+        display: grid;
+        gap: 4px;
+        grid-template-columns: repeat(5, 1fr);
+      }
+      .cell {
+        border: 1px solid #28303a;
+        border-radius: 8px;
+        height: 56px;
+        display: grid;
+        place-items: center;
+        font-size: 14px;
+      }
+      .cell.wall { background: #30363d; }
+      .cell.visited { background: var(--green-deep); }
+      .cell.current { background: var(--green); color: #001f0d; font-weight: 700; }
+      .cell.error { background: var(--red-bg); border-color: var(--red); }
+
+      .linear-box {
+        border-top: 1px solid var(--line);
+        margin-top: auto;
+        padding: 12px 18px 16px;
+        color: #adbac7;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 12px;
+        white-space: nowrap;
+        overflow-x: auto;
+      }
+      .chip {
+        display: inline-block;
+        border: 1px solid #388bfd;
+        background: #1f3555;
+        border-radius: 999px;
+        padding: 2px 8px;
+        margin-right: 6px;
+      }
+      .kv-table {
+        padding: 16px;
+        overflow: auto;
+        font-size: 13px;
+      }
+      .kv-row {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr 2fr;
+        gap: 12px;
+        border-bottom: 1px solid #232a33;
+        padding: 8px 0;
+      }
+      .kv-row.changed { background: rgba(227, 179, 65, 0.18); }
+      .kv-type {
+        color: #adbac7;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        text-align: center;
+        width: fit-content;
+        padding: 1px 8px;
+      }
+
+      .right-body {
+        margin: 0 14px 14px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        min-height: 0;
+        flex: 1;
+        display: grid;
+        grid-template-rows: auto 1fr auto 1fr auto;
+      }
+      .divider { border-top: 1px solid var(--line); }
+      .breadcrumb {
+        padding: 10px 12px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .vars, .ai {
+        padding: 10px 12px;
+        overflow: auto;
+      }
+      .var-item {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        font-size: 13px;
+        border-bottom: 1px dashed #28303a;
+        padding: 6px 0;
+      }
+      .var-item.key strong { color: #9ee5aa; }
+      .var-item.changed { background: rgba(227, 179, 65, 0.18); }
+      .ai-card {
+        border: 1px solid #2d333b;
+        border-radius: 8px;
+        padding: 8px;
+        margin-bottom: 8px;
+        font-size: 13px;
+      }
+      .ai-card.empty { color: var(--muted); font-style: italic; }
+      .ai-card.error {
+        border-color: var(--red);
+        background: rgba(90, 18, 18, 0.35);
+      }
+
+      .input-panel {
+        border-top: 1px solid var(--line);
+        background: #13161a;
+        padding: 10px 14px;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 12px;
+        align-items: center;
+      }
+      textarea {
+        resize: none;
+        height: 58px;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        background: #0f141a;
+        color: var(--text);
+        padding: 10px;
+        font-family: inherit;
+      }
+      .run-btn {
+        border: 1px solid transparent;
+        border-radius: 8px;
+        padding: 10px 16px;
+        font-weight: 600;
+        cursor: pointer;
+        min-width: 140px;
+      }
+      .run-btn.ready { background: #238636; color: #fff; }
+      .run-btn.running, .run-btn.loading, .run-btn.reinitializing {
+        background: #21262d; color: #9ba3ad; cursor: not-allowed;
+      }
+      .run-btn.error { background: #2d1112; color: #f8b4b4; cursor: not-allowed; }
+
+      .timeline {
+        border-top: 1px solid var(--line);
+        height: 48px;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        padding: 0 14px;
+        gap: 10px;
+      }
+      .dots {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        min-width: 0;
+        overflow-x: auto;
+      }
+      .dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        background: #30363d; flex: 0 0 auto;
+      }
+      .dot.loop { background: var(--blue); }
+      .dot.branch { background: var(--purple); transform: rotate(45deg); border-radius: 1px; }
+      .dot.error { width: 12px; height: 12px; background: var(--red); border-radius: 50%; position: relative; }
+      .dot.error::before { content: "×"; position: absolute; inset: 0; font-size: 10px; display: grid; place-items: center; }
+      .dot.current { width: 12px; height: 12px; background: #fff; }
+      .controls {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .controls button, .controls select {
+        height: 30px;
+        border-radius: 6px;
+        border: 1px solid var(--line);
+        background: #21262d;
+        color: var(--text);
+        padding: 0 10px;
+      }
+
+      .toast-wrap {
+        position: fixed;
+        right: 14px;
+        bottom: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        width: 360px;
+      }
+      .toast {
+        border-radius: 8px;
+        padding: 10px 12px;
+        border: 1px solid;
+        font-size: 13px;
+      }
+      .toast.warn { background: #5a3600; border-color: var(--amber); }
+      .toast.success { background: #0d4429; border-color: var(--green); }
+      .toast.error { background: #5a1212; border-color: var(--red); }
+
+      @keyframes shimmer {
+        from { background-position: 200% 0; }
+        to { background-position: -200% 0; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <div id="topProgress" class="top-progress"></div>
+      <div id="systemBanner" class="system-banner"></div>
+
+      <header>
+        <div class="logo">Pro<span>va</span></div>
+        <div id="headerBadge" class="header-center">알고리즘 감지 전</div>
+        <div class="header-right">도움말 ?</div>
+      </header>
+
+      <main class="workspace">
+        <section class="pane">
+          <div class="section-title">Python Editor</div>
+          <div id="editor" class="editor-wrap"></div>
+          <div class="editor-badge">
+            Python 3.11 표준 라이브러리 지원 · 외부 패키지 미지원
+          </div>
+        </section>
+
+        <section class="pane">
+          <div class="section-title">Visualization</div>
+          <div id="centerPane" class="center-body"></div>
+        </section>
+
+        <section class="pane">
+          <div class="section-title">Variables / AI</div>
+          <div class="right-body">
+            <div id="breadcrumb" class="breadcrumb">&lt;global&gt; (depth: 0)</div>
+            <div id="varsPane" class="vars"></div>
+            <div class="divider"></div>
+            <div id="aiPane" class="ai"></div>
+            <div id="consolePane" class="breadcrumb divider">콘솔 출력 없음</div>
+          </div>
+        </section>
+      </main>
+
+      <section class="input-panel">
+        <textarea id="stdinInput" placeholder="줄마다 입력값을 작성하세요 (예: 5 3↵2 4 1)"></textarea>
+        <button id="runBtn" class="run-btn ready">▶ 실행</button>
+      </section>
+
+      <section class="timeline">
+        <div id="dots" class="dots"></div>
+        <div class="controls">
+          <button id="prevBtn">◀</button>
+          <button id="nextBtn">▶</button>
+          <button id="playBtn">▷</button>
+          <select id="speedSel">
+            <option value="0.5">×0.5</option>
+            <option value="1" selected>×1</option>
+            <option value="1.5">×1.5</option>
+            <option value="2">×2</option>
+          </select>
+        </div>
+      </section>
+    </div>
+
+    <div id="toastWrap" class="toast-wrap"></div>
+
+    <script>
+      const SAMPLE_CODE = [
+        "from collections import deque",
+        "",
+        "def bfs(grid, sr, sc):",
+        "    q = deque([(sr, sc)])",
+        "    visited = [[False]*5 for _ in range(5)]",
+        "    while q:",
+        "        r, c = q.popleft()",
+        "        if visited[r][c]:",
+        "            continue",
+        "        visited[r][c] = True",
+        "        for nr, nc in [(r+1,c),(r,c+1)]:",
+        "            if nr < 5 and nc < 5:",
+        "                q.append((nr, nc))",
+        "    return visited",
+        "",
+        "print('done')"
+      ];
+
+      const DEFAULT_ANNOTATED = {
+        explanation: "",
+        visual_actions: [],
+        aiError: null
+      };
+
+      const state = {
+        pyodideStatus: "loading",
+        mode: "ready",
+        strategy: null,
+        metadata: null,
+        rawTrace: [],
+        annotated: [],
+        mergedTrace: [],
+        branchLines: { loop: [6], branch: [8, 12] },
+        currentStep: 0,
+        isPlaying: false,
+        playbackSpeed: 1,
+        globalError: null,
+        aiMode: "ok",
+        timer: null,
+        changedVars: new Set()
+      };
+
+      const el = {
+        topProgress: document.getElementById("topProgress"),
+        systemBanner: document.getElementById("systemBanner"),
+        headerBadge: document.getElementById("headerBadge"),
+        editor: document.getElementById("editor"),
+        centerPane: document.getElementById("centerPane"),
+        breadcrumb: document.getElementById("breadcrumb"),
+        varsPane: document.getElementById("varsPane"),
+        aiPane: document.getElementById("aiPane"),
+        consolePane: document.getElementById("consolePane"),
+        stdinInput: document.getElementById("stdinInput"),
+        runBtn: document.getElementById("runBtn"),
+        dots: document.getElementById("dots"),
+        prevBtn: document.getElementById("prevBtn"),
+        nextBtn: document.getElementById("nextBtn"),
+        playBtn: document.getElementById("playBtn"),
+        speedSel: document.getElementById("speedSel"),
+        toastWrap: document.getElementById("toastWrap")
+      };
+
+      function addToast(text, type = "warn", ttl = 0) {
+        const t = document.createElement("div");
+        t.className = "toast " + type;
+        t.textContent = text;
+        el.toastWrap.prepend(t);
+        if (ttl > 0) {
+          setTimeout(() => t.remove(), ttl);
+        }
+      }
+
+      function setBanner(kind, text, actionText, actionFn) {
+        el.systemBanner.className = "system-banner";
+        if (!kind) {
+          el.systemBanner.textContent = "";
+          return;
+        }
+        el.systemBanner.classList.add("visible", kind);
+        el.systemBanner.innerHTML = "";
+        const left = document.createElement("span");
+        left.textContent = text;
+        el.systemBanner.appendChild(left);
+        if (actionText) {
+          const btn = document.createElement("button");
+          btn.textContent = actionText;
+          btn.style.border = "1px solid currentColor";
+          btn.style.background = "transparent";
+          btn.style.color = "inherit";
+          btn.style.borderRadius = "6px";
+          btn.style.height = "26px";
+          btn.style.padding = "0 8px";
+          btn.onclick = actionFn;
+          el.systemBanner.appendChild(btn);
+        }
+      }
+
+      function inferType(v) {
+        if (Array.isArray(v)) {
+          if (Array.isArray(v[0])) return "list2d";
+          return "list";
+        }
+        if (typeof v === "boolean") return "bool";
+        if (typeof v === "number") return "int";
+        return typeof v;
+      }
+
+      function deepEqual(a, b) {
+        return JSON.stringify(a) === JSON.stringify(b);
+      }
+
+      function detectScenario(code) {
+        if (/timeout|while True/.test(code)) return "timeout";
+        if (/fallback|ai_fail/.test(code)) return "fallback";
+        if (/indexerror|error_case/.test(code)) return "runtimeError";
+        return "normal";
+      }
+
+      function buildTrace(kind) {
+        const trace = [];
+        const visited = Array.from({ length: 5 }, () => Array.from({ length: 5 }, () => false));
+        const queue = [[0, 0], [1, 0], [0, 1], [2, 1]];
+        const lines = [4, 6, 7, 8, 10, 12, 6, 7, 10, 12, 16];
+        for (let i = 0; i < lines.length; i += 1) {
+          const cur = queue[0] || [0, 0];
+          if (i > 0 && i < 6 && cur) visited[Math.min(cur[0], 4)][Math.min(cur[1], 4)] = true;
+          const vars = {
+            queue: queue.slice(0, Math.max(1, 4 - i % 4)),
+            visited,
+            r: cur[0],
+            c: cur[1],
+            step: i
+          };
+          trace.push({
+            step: i,
+            line: lines[i],
+            vars: structuredClone(vars),
+            scope: { func: "bfs", depth: 1 },
+            parent_frames: [{ scope: { func: "<global>", depth: 0 }, vars: { grid: "[5x5]" } }],
+            runtimeError: null
+          });
+        }
+        if (kind === "runtimeError") {
+          trace[trace.length - 1].line = 17;
+          trace[trace.length - 1].runtimeError = {
+            type: "IndexError",
+            message: "list index out of range",
+            line: 17
+          };
+          trace[trace.length - 1].vars.r = 5;
+          trace[trace.length - 1].vars.c = 0;
+        }
+        return trace;
+      }
+
+      function buildAnnotated(rawTrace, kind) {
+        return rawTrace.map((row, i) => {
+          if (kind === "fallback" && i > 4) return null;
+          const base = {
+            explanation: `L.${row.line} 단계 처리`,
+            visual_actions: i % 2 === 0 ? ["focus GRID"] : ["update LINEAR"],
+            aiError: null
+          };
+          if (row.runtimeError) {
+            base.explanation = "인덱스 범위 초과로 탐색 실패";
+            base.aiError = {
+              root_cause: "grid 범위를 초과하는 인덱스 접근",
+              fix_hint: "접근 전 0 <= r < rows 조건을 확인하세요"
+            };
+          }
+          return base;
+        });
+      }
+
+      function mergeTrace(rawTrace, annotated) {
+        return rawTrace.map((row, i) => {
+          const ann = annotated[i] || DEFAULT_ANNOTATED;
+          return { ...row, ...ann };
+        });
+      }
+
+      function renderEditor() {
+        el.editor.innerHTML = "";
+        SAMPLE_CODE.forEach((line, idx) => {
+          const div = document.createElement("div");
+          div.className = "editor-line";
+          const lineNo = idx + 1;
+          if (state.mergedTrace.length > 0) {
+            const current = state.mergedTrace[state.currentStep];
+            if (current && current.line === lineNo) {
+              div.classList.add(current.runtimeError ? "error" : "current");
+            }
+          }
+          div.innerHTML = `<span class="ln">${lineNo}</span><span>${line || " "}</span>`;
+          el.editor.appendChild(div);
+        });
+      }
+
+      function renderCenter() {
+        const current = state.mergedTrace[state.currentStep];
+        if (!state.rawTrace.length) {
+          el.centerPane.innerHTML = `
+            <div class="placeholder">
+              <div>
+                <div style="font-size:32px;margin-bottom:10px;">▦</div>
+                <div style="font-size:18px;color:#e6edf3;margin-bottom:6px;">코드를 실행하면 시각화가 여기에 표시됩니다</div>
+                <div>BFS, DFS, 스택, 큐 등의 알고리즘을 자동으로 감지합니다</div>
+              </div>
+            </div>`;
+          return;
+        }
+
+        if (state.mode === "dataExploration") {
+          const prev = state.mergedTrace[state.currentStep - 1];
+          const vars = current.vars;
+          const keys = Object.keys(vars);
+          const rows = keys.map((k) => {
+            const changed = prev && !deepEqual(prev.vars[k], vars[k]);
+            const v = JSON.stringify(vars[k]);
+            return `<div class="kv-row ${changed ? "changed" : ""}">
+              <div>${k}</div>
+              <div class="kv-type">${inferType(vars[k])}</div>
+              <div>${v.length > 90 ? v.slice(0, 90) + "..." : v}</div>
+            </div>`;
+          }).join("");
+          el.centerPane.innerHTML = `<div class="kv-table">
+            <div style="margin-bottom:8px;color:#adbac7;">📋 변수 상태 — Step ${state.currentStep + 1} / ${state.mergedTrace.length}</div>
+            ${rows}
+          </div>`;
+          return;
+        }
+
+        const visited = current.vars.visited || [];
+        const rows = visited.map((r, y) => {
+          return r.map((v, x) => {
+            let cls = "cell";
+            let txt = "";
+            if ((x === 1 && y === 0) || (x === 2 && y === 3)) cls += " wall";
+            if (v) cls += " visited";
+            if (current.vars.r === y && current.vars.c === x) {
+              cls += current.runtimeError ? " error" : " current";
+              txt = current.runtimeError ? "✕" : "→";
+            }
+            return `<div class="${cls}">${txt}</div>`;
+          }).join("");
+        }).join("");
+
+        const queue = (current.vars.queue || []).map((q) => `<span class="chip">(${q[0]},${q[1]})</span>`).join("");
+        el.centerPane.innerHTML = `
+          <div class="viz-grid">${rows}</div>
+          <div class="linear-box">HEAD → ${queue || "<span class='chip'>(empty)</span>"} → TAIL</div>
+        `;
+      }
+
+      function renderRight() {
+        const current = state.mergedTrace[state.currentStep];
+        if (!current) {
+          el.varsPane.innerHTML = `<div style="color:#8b949e;">실행 후 변수가 표시됩니다</div>`;
+          el.aiPane.innerHTML = `<div class="ai-card empty">(설명 없음)</div>`;
+          return;
+        }
+        el.breadcrumb.textContent = `<global> > ${current.scope.func} (depth: ${current.scope.depth})`;
+        const prev = state.mergedTrace[state.currentStep - 1];
+        const keyVars = state.metadata?.key_vars || [];
+        el.varsPane.innerHTML = Object.entries(current.vars).map(([k, v]) => {
+          const changed = prev && !deepEqual(prev.vars[k], v);
+          return `<div class="var-item ${keyVars.includes(k) ? "key" : ""} ${changed ? "changed" : ""}">
+            <strong>${k}</strong><span>${JSON.stringify(v).slice(0, 44)}</span>
+          </div>`;
+        }).join("");
+
+        if (current.runtimeError) {
+          el.aiPane.innerHTML = `
+            <div class="ai-card error">
+              <div><strong>⚠ ${current.runtimeError.type}</strong></div>
+              <div>${current.runtimeError.message} (L.${current.runtimeError.line})</div>
+              ${current.aiError ? `<hr style="border-color:#4e2424;"><div>원인: ${current.aiError.root_cause}</div><div>힌트: ${current.aiError.fix_hint}</div>` : ""}
+              <button id="rewindBtn" style="margin-top:8px;height:30px;border:1px solid #da3633;background:#2d1112;color:#f8b4b4;border-radius:6px;">↩ 에러 이전으로 되돌아가기</button>
+            </div>`;
+          const rewindBtn = document.getElementById("rewindBtn");
+          if (rewindBtn) rewindBtn.onclick = () => setStep(Math.max(0, state.currentStep - 1));
+        } else if (current.explanation) {
+          el.aiPane.innerHTML = `<div class="ai-card"><div style="color:#8b949e;margin-bottom:4px;">L.${current.line}</div>${current.explanation}</div>`;
+        } else {
+          el.aiPane.innerHTML = `<div class="ai-card empty">(설명 없음) AI 연결에 실패했습니다.</div>`;
+        }
+      }
+
+      function renderTimeline() {
+        el.dots.innerHTML = "";
+        if (!state.mergedTrace.length) {
+          el.dots.innerHTML = `<span style="color:#8b949e;font-size:12px;">빈 타임라인</span>`;
+          return;
+        }
+        state.mergedTrace.forEach((row, idx) => {
+          const dot = document.createElement("span");
+          dot.className = "dot";
+          if (state.branchLines.loop.includes(row.line)) dot.classList.add("loop");
+          if (state.branchLines.branch.includes(row.line)) dot.classList.add("branch");
+          if (row.runtimeError) dot.classList.add("error");
+          if (idx === state.currentStep) dot.classList.add("current");
+          dot.onclick = () => setStep(idx);
+          el.dots.appendChild(dot);
+        });
+      }
+
+      function updateControlState() {
+        const disabledMove = !state.mergedTrace.length || state.pyodideStatus === "running" || state.pyodideStatus === "loading";
+        el.prevBtn.disabled = disabledMove;
+        el.nextBtn.disabled = disabledMove;
+        el.playBtn.disabled = disabledMove;
+        el.stdinInput.disabled = state.pyodideStatus === "running" || state.pyodideStatus === "error";
+        const status = state.pyodideStatus;
+        el.runBtn.className = "run-btn " + status;
+        if (status === "ready") {
+          el.runBtn.textContent = state.rawTrace.length ? "▶ 다시 실행" : "▶ 실행";
+          el.runBtn.disabled = false;
+        } else if (status === "running") {
+          el.runBtn.textContent = "실행 중...";
+          el.runBtn.disabled = true;
+        } else if (status === "loading") {
+          el.runBtn.textContent = "Python 준비 중...";
+          el.runBtn.disabled = true;
+        } else if (status === "reinitializing") {
+          el.runBtn.textContent = "🔄 초기화 중...";
+          el.runBtn.disabled = true;
+        } else if (status === "error") {
+          el.runBtn.textContent = "실행 불가";
+          el.runBtn.disabled = true;
+        }
+      }
+
+      function updateHeaderAndBanner() {
+        el.topProgress.classList.toggle("running", state.pyodideStatus === "running");
+        if (state.pyodideStatus === "loading") {
+          setBanner("loading", "⏳ Python 환경 준비 중입니다. 잠시만 기다려 주세요.");
+        } else if (state.pyodideStatus === "error") {
+          setBanner("error", "✕ Python 환경 초기화에 실패했습니다. 페이지를 새로고침해 주세요.", "새로고침", () => window.location.reload());
+        } else if (state.mode === "dataExploration") {
+          setBanner("data", "⚠ AI 연결에 실패했습니다. 기본 변수 뷰로 코드 흐름을 추적합니다.", "↻ AI 분석 재시도", retryAi);
+        } else {
+          setBanner(null);
+        }
+
+        if (state.metadata?.display_name && state.mode !== "dataExploration") {
+          el.headerBadge.className = "header-center active";
+          if (state.pyodideStatus === "running") {
+            el.headerBadge.textContent = "알고리즘 분석 중...";
+          } else {
+            el.headerBadge.textContent = `● ${state.metadata.display_name}`;
+          }
+        } else if (state.mode === "dataExploration") {
+          el.headerBadge.className = "header-center";
+          el.headerBadge.textContent = "○ 알고리즘 감지 실패";
+        } else {
+          el.headerBadge.className = "header-center";
+          el.headerBadge.textContent = state.pyodideStatus === "running" ? "알고리즘 분석 중..." : "알고리즘 감지 전";
+        }
+      }
+
+      function renderAll() {
+        updateHeaderAndBanner();
+        updateControlState();
+        renderEditor();
+        renderCenter();
+        renderRight();
+        renderTimeline();
+        const current = state.mergedTrace[state.currentStep];
+        el.consolePane.textContent = current ? "콘솔: print('done')" : "콘솔 출력 없음";
+      }
+
+      function setStep(step) {
+        if (!state.mergedTrace.length) return;
+        const max = state.mergedTrace.length - 1;
+        state.currentStep = Math.max(0, Math.min(max, step));
+        const current = state.mergedTrace[state.currentStep];
+        if (current.runtimeError) {
+          state.isPlaying = false;
+          if (state.timer) clearInterval(state.timer);
+        }
+        renderAll();
+      }
+
+      function startPlayback() {
+        if (state.isPlaying || !state.mergedTrace.length) return;
+        state.isPlaying = true;
+        el.playBtn.textContent = "⏸";
+        const interval = Math.max(280, 900 / state.playbackSpeed);
+        state.timer = setInterval(() => {
+          if (state.currentStep >= state.mergedTrace.length - 1) {
+            stopPlayback();
+            return;
+          }
+          setStep(state.currentStep + 1);
+        }, interval);
+      }
+
+      function stopPlayback() {
+        state.isPlaying = false;
+        el.playBtn.textContent = "▷";
+        if (state.timer) clearInterval(state.timer);
+      }
+
+      function retryAi() {
+        if (!state.rawTrace.length) return;
+        addToast("AI 분석을 재시도합니다.", "warn", 2000);
+        state.mode = "visualizing";
+        const restored = buildAnnotated(state.rawTrace, "normal");
+        state.annotated = restored;
+        state.mergedTrace = mergeTrace(state.rawTrace, state.annotated);
+        renderAll();
+      }
+
+      async function runScenario() {
+        const code = SAMPLE_CODE.join("\n");
+        const scenario = detectScenario(code + "\n" + el.stdinInput.value);
+        stopPlayback();
+        state.pyodideStatus = "running";
+        state.mode = "running";
+        state.currentStep = 0;
+        state.rawTrace = [];
+        state.annotated = [];
+        state.mergedTrace = [];
+        state.metadata = { display_name: "BFS — 격자 탐색", strategy: "GRID_LINEAR", key_vars: ["queue", "visited"] };
+        renderAll();
+
+        await new Promise((r) => setTimeout(r, 600));
+        if (scenario === "timeout") {
+          state.pyodideStatus = "reinitializing";
+          addToast("⚠ 실행 시간이 너무 길어 안전을 위해 실행을 중단했습니다. 환경을 재설정합니다.", "warn");
+          renderAll();
+          await new Promise((r) => setTimeout(r, 1400));
+          state.pyodideStatus = "ready";
+          addToast("✅ 환경 준비 완료. 코드를 수정 후 다시 시도해 주세요.", "success", 4000);
+          renderAll();
+          return;
+        }
+
+        state.rawTrace = buildTrace(scenario);
+        state.mode = "running";
+        renderAll();
+        await new Promise((r) => setTimeout(r, 700));
+
+        state.annotated = buildAnnotated(state.rawTrace, scenario === "fallback" ? "fallback" : scenario);
+        state.mergedTrace = mergeTrace(state.rawTrace, state.annotated);
+        state.pyodideStatus = "ready";
+        state.mode = scenario === "fallback" ? "dataExploration" : "visualizing";
+        if (scenario === "fallback") {
+          addToast("⚠ AI 설명 연결에 실패했습니다. 변수 데이터만으로 탐색합니다.", "warn", 5000);
+        }
+        setStep(state.mergedTrace.findIndex((s) => s.runtimeError) >= 0 ? state.mergedTrace.findIndex((s) => s.runtimeError) : 0);
+      }
+
+      function bindEvents() {
+        el.runBtn.addEventListener("click", () => {
+          if (state.pyodideStatus === "ready") runScenario();
+        });
+        el.prevBtn.addEventListener("click", () => setStep(state.currentStep - 1));
+        el.nextBtn.addEventListener("click", () => setStep(state.currentStep + 1));
+        el.playBtn.addEventListener("click", () => {
+          if (state.isPlaying) stopPlayback();
+          else startPlayback();
+        });
+        el.speedSel.addEventListener("change", (e) => {
+          state.playbackSpeed = Number(e.target.value);
+          if (state.isPlaying) {
+            stopPlayback();
+            startPlayback();
+          }
+        });
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "ArrowLeft") setStep(state.currentStep - 1);
+          if (e.key === "ArrowRight") setStep(state.currentStep + 1);
+          if (e.key === " ") {
+            e.preventDefault();
+            if (state.isPlaying) stopPlayback();
+            else startPlayback();
+          }
+          if (e.key === "Home") setStep(0);
+          if (e.key === "End") setStep(state.mergedTrace.length - 1);
+        });
+      }
+
+      function init() {
+        bindEvents();
+        renderAll();
+        setTimeout(() => {
+          state.pyodideStatus = "ready";
+          renderAll();
+        }, 700);
+      }
+
+      init();
+    </script>
+  </body>
+</html>

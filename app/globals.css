@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background: #0d1117;
+  color: #e6edf3;
+  font-family: Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.dot-scrollbar::-webkit-scrollbar {
+  height: 6px;
+}
+
+.dot-scrollbar::-webkit-scrollbar-thumb {
+  background: #30363d;
+  border-radius: 999px;
+}
