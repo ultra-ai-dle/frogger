@@ -113,40 +113,40 @@ export function TimelineControls({
         {/* Playback controls */}
         <div className="flex items-center gap-1">
           <button
-            className="h-7 px-2 flex items-center gap-1 rounded border border-prova-line bg-[#161b22] text-[11px] text-prova-muted hover:text-white hover:border-[#58a6ff]/40 transition-colors disabled:opacity-30"
+            className="h-7 w-7 flex items-center justify-center rounded border border-prova-line bg-[#161b22] text-prova-muted hover:text-white hover:border-[#58a6ff]/40 transition-colors disabled:opacity-30"
             onClick={() => onStepChange(currentStep - 1)}
             disabled={disabled || currentStep === 0}
+            aria-label="Step back"
           >
             <IconStepBack />
-            <span>STEP BACK</span>
           </button>
 
           <button
-            className="h-7 px-3 flex items-center gap-1 rounded border border-prova-line bg-[#161b22] text-[11px] text-prova-muted hover:text-white hover:border-prova-green/40 transition-colors disabled:opacity-30"
+            className="h-7 w-7 flex items-center justify-center rounded border border-prova-line bg-[#161b22] text-prova-muted hover:text-white hover:border-prova-green/40 transition-colors disabled:opacity-30"
             onClick={onTogglePlay}
             disabled={disabled}
+            aria-label={isPlaying ? "Pause" : "Play"}
           >
             {isPlaying ? <IconPause /> : <IconPlay />}
-            <span>{isPlaying ? "PAUSE" : "PLAY"}</span>
           </button>
 
           <button
-            className="h-7 px-2 flex items-center gap-1 rounded border border-prova-line bg-[#161b22] text-[11px] text-prova-muted hover:text-white hover:border-[#58a6ff]/40 transition-colors disabled:opacity-30"
+            className="h-7 w-7 flex items-center justify-center rounded border border-prova-line bg-[#161b22] text-prova-muted hover:text-white hover:border-[#58a6ff]/40 transition-colors disabled:opacity-30"
             onClick={() => onStepChange(currentStep + 1)}
             disabled={disabled || currentStep >= steps.length - 1}
+            aria-label="Step forward"
           >
-            <span>STEP FORWARD</span>
             <IconStepForward />
           </button>
 
           {(isError || hasError) && (
             <button
-              className="h-7 px-2 flex items-center gap-1 rounded border border-prova-red/40 bg-[#2d1112]/60 text-[11px] text-prova-red hover:bg-[#3d1a1a] transition-colors disabled:opacity-30"
+              className="h-7 w-7 flex items-center justify-center rounded border border-prova-red/40 bg-[#2d1112]/60 text-prova-red hover:bg-[#3d1a1a] transition-colors disabled:opacity-30"
               onClick={onJumpToError}
               disabled={disabled}
+              aria-label="Jump to error"
             >
               <IconTarget />
-              <span>JUMP TO ERROR</span>
             </button>
           )}
         </div>
