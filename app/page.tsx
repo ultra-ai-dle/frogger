@@ -242,9 +242,7 @@ function sanitizeVarTypesWithAllowlist(varTypes: Record<string, string>, allowed
   );
 }
 
-function isRenderableValue(value: unknown) {
-  return Array.isArray(value) || (!!value && typeof value === "object");
-}
+
 
 function stableStringifyObject(obj: Record<string, string>) {
   return JSON.stringify(
@@ -353,13 +351,10 @@ export default function Page() {
   const shouldUseGraphPanel = useMemo(() => {
     if (isAnalyzingCode || !currentStep) return false;
     if (effectiveStrategy === "GRAPH") return true;
-    const source = mergedTrace.length > 0
-      ? mergedTrace.filter((s) => s.step <= currentStep.step)
-      : [currentStep];
-    return source.some((s) =>
-      Object.values(s.vars ?? {}).some((v) => isRenderableValue(v))
-    );
-  }, [currentStep, effectiveStrategy, isAnalyzingCode, mergedTrace]);
+    // AI가 특수 자료구조 뷰를 지정한 변수가 있으면 GraphPanel을 사용
+    if (metadata?.special_var_kinds && Object.keys(metadata.special_var_kinds).length > 0) return true;
+    return false;
+  }, [currentStep, effectiveStrategy, isAnalyzingCode, metadata?.special_var_kinds]);
   const shouldShowBitToggle = useMemo(() => {
     if (!metadata) return false;
     if (metadata.uses_bitmasking) return true;
@@ -1063,6 +1058,7 @@ export default function Page() {
                   bitWidth={bitWidth}
                   linearPivots={metadata?.linear_pivots}
                   linearContextVarNames={metadata?.linear_context_var_names}
+                  specialVarKinds={metadata?.special_var_kinds}
                 />
               ) : (
                 <GridLinearPanel
