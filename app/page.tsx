@@ -332,6 +332,14 @@ export default function Page() {
     () => resolveGraphMode(metadata, code),
     [metadata, code]
   );
+  const linearArrayVarName = useMemo(() => {
+    const m = metadata?.var_mapping;
+    if (!m) return undefined;
+    const primary = m.PRIMARY;
+    if (primary?.panel === "LINEAR") return primary.var_name;
+    const linear = Object.values(m).find((item) => item.panel === "LINEAR");
+    return linear?.var_name;
+  }, [metadata?.var_mapping]);
 
   const effectiveStrategy = useMemo(() => {
     if (!metadata) return undefined;
@@ -550,7 +558,7 @@ export default function Page() {
         };
         setWorkerResult(sanitizedPayload);
         try {
-          const analyzeKey = `${codeRef.current}\n@@\n${stableStringifyObject(sanitizedVarTypes)}`;
+          const analyzeKey = `${codeRef.current}\n@@\n${stableStringifyObject(sanitizedVarTypes)}\n@@\nmeta-v2-partition-pivot`;
           const cachedMeta = analyzeCacheRef.current.get(analyzeKey);
           let meta: AnalyzeMetadata;
           if (cachedMeta) {
@@ -1053,6 +1061,8 @@ export default function Page() {
                   traceSteps={mergedTrace}
                   bitmaskMode={bitmaskMode}
                   bitWidth={bitWidth}
+                  linearPivots={metadata?.linear_pivots}
+                  linearContextVarNames={metadata?.linear_context_var_names}
                 />
               ) : (
                 <GridLinearPanel
@@ -1062,6 +1072,9 @@ export default function Page() {
                   strategy={effectiveStrategy}
                   bitmaskMode={bitmaskMode}
                   bitWidth={bitWidth}
+                  linearPivots={metadata?.linear_pivots}
+                  linearContextVarNames={metadata?.linear_context_var_names}
+                  linearArrayVarName={linearArrayVarName}
                 />
               )}
             </div>

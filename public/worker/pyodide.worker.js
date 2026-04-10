@@ -37,7 +37,17 @@ async function ensurePyodideReady() {
   return pyodideReadyPromise;
 }
 
-async function runWithTrace(code, stdin) {
+function provaPositiveInt(value, fallback) {
+  const x = Math.floor(Number(value));
+  return Number.isFinite(x) && x > 0 ? x : fallback;
+}
+
+/** limits는 src/config/provaRuntime.ts 와 동기화되는 기본값을 둔다. */
+async function runWithTrace(code, stdin, limits = {}) {
+  const maxTraceSteps = provaPositiveInt(limits.maxTraceSteps, 10000);
+  const safeL0 = provaPositiveInt(limits.safeSerializeListLimitRoot, 30);
+  const safeLN = provaPositiveInt(limits.safeSerializeListLimitNested, 12);
+
   const runtime = await ensurePyodideReady();
   runtime.globals.set("__prova_code", String(code));
   runtime.globals.set("__prova_stdin", String(stdin ?? ""));
@@ -95,7 +105,9 @@ _step = 0
 _last_line = 0
 _trace_disabled = False
 _trace_truncated = False
-_MAX_TRACE_STEPS = 10000
+_MAX_TRACE_STEPS = ${maxTraceSteps}
+_PROVA_SAFE_L0 = ${safeL0}
+_PROVA_SAFE_LN = ${safeLN}
 
 def _collect_user_symbols(src):
     symbols = set()
@@ -154,7 +166,7 @@ def _safe(v, depth=0):
         return v
     if isinstance(v, (list, tuple, set, collections.deque)):
         arr = list(v)
-        limit = 30 if depth == 0 else 12
+        limit = _PROVA_SAFE_L0 if depth == 0 else _PROVA_SAFE_LN
         sliced = arr[:limit]
         mapped = [_safe(x, depth + 1) for x in sliced]
         if len(arr) > limit:
@@ -163,7 +175,7 @@ def _safe(v, depth=0):
     if isinstance(v, dict):
         out = {}
         count = 0
-        limit = 30 if depth == 0 else 12
+        limit = _PROVA_SAFE_L0 if depth == 0 else _PROVA_SAFE_LN
         for k, val in v.items():
             if count >= limit:
                 break
@@ -334,7 +346,25 @@ except Exception as e:
 finally:
     sys.settrace(None)
 
-json.dumps({"rawTrace": _trace})
+try:
+    _result_json = json.dumps({"rawTrace": _trace})
+except Exception as _ser_err:
+    _result_json = json.dumps({
+        "rawTrace": [{
+            "step": 0,
+            "line": 0,
+            "vars": {},
+            "scope": {"func": "<global>", "depth": 1},
+            "parent_frames": [],
+            "stdout": [],
+            "runtimeError": {
+                "type": _ser_err.__class__.__name__,
+                "message": "트레이스 JSON 직렬화 실패: " + str(_ser_err),
+                "line": 0
+            }
+        }]
+    })
+_result_json
   `);
 
   const parsed = JSON.parse(String(resultJson));
@@ -342,7 +372,7 @@ json.dumps({"rawTrace": _trace})
 }
 
 self.onmessage = async (event) => {
-  const { code = "", stdin = "" } = event.data || {};
+  const { code = "", stdin = "", limits = {} } = event.data || {};
   if (String(code).trim().length === 0) {
     self.postMessage({
       type: "invalid_input",
@@ -359,7 +389,7 @@ self.onmessage = async (event) => {
   }
 
   try {
-    const rawTrace = await runWithTrace(code, stdin);
+    const rawTrace = await runWithTrace(code, stdin, limits);
     const varTypes = extractVarTypesUnion(rawTrace);
     self.postMessage({
       type: "done",

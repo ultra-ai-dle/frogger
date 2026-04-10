@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { AnalyzeMetadata } from "@/types/prova";
+import { AnalyzeMetadata, LinearPivotSpec } from "@/types/prova";
 import { inferGraphModeFromCode } from "@/lib/graphModeInference";
+import { enrichAnalyzeMetadataWithPartitionValuePivots } from "@/lib/partitionPivotEnrichment";
 import { normalizeAndDedupeTags } from "@/lib/tagNormalize";
 
 type Panel = "GRID" | "LINEAR" | "GRAPH" | "VARIABLES";
@@ -21,6 +22,13 @@ type AnalyzeAiResponse = {
   time_complexity?: string;
   key_vars: string[];
   var_mapping: Record<string, { var_name: string; panel: Panel }>;
+  linear_pivots?: Array<{
+    var_name: string;
+    badge?: string;
+    indexes_1d_var?: string;
+    pivot_mode?: "index" | "value_in_array";
+  }>;
+  linear_context_var_names?: string[];
 };
 
 const ANALYZE_CODE_CHAR_LIMIT = 5000;
@@ -215,7 +223,21 @@ async function callGemini(prompt: string, model: string): Promise<string> {
             uses_bitmasking: { type: "boolean" },
             time_complexity: { type: "string" },
             key_vars: { type: "array", items: { type: "string" } },
-            var_mapping: { type: "object" }
+            var_mapping: { type: "object" },
+            linear_pivots: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  var_name: { type: "string" },
+                  badge: { type: "string" },
+                  indexes_1d_var: { type: "string" },
+                  pivot_mode: { type: "string", enum: ["index", "value_in_array"] }
+                },
+                required: ["var_name"]
+              }
+            },
+            linear_context_var_names: { type: "array", items: { type: "string" } }
           },
           required: ["algorithm", "display_name", "strategy", "tags", "key_vars", "var_mapping"]
         }
@@ -277,6 +299,38 @@ async function callOpenAI(prompt: string, model: string): Promise<string> {
   return String(text);
 }
 
+function parseLinearPivots(raw: unknown, varNames: string[]): LinearPivotSpec[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const out: LinearPivotSpec[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const o = item as Record<string, unknown>;
+    const vn = typeof o.var_name === "string" ? o.var_name.trim() : "";
+    if (!vn || !varNames.includes(vn)) continue;
+    const spec: LinearPivotSpec = { var_name: vn };
+    if (typeof o.badge === "string") {
+      const b = o.badge.trim();
+      if (b.length > 0 && b.length <= 6) spec.badge = b;
+    }
+    const iv = typeof o.indexes_1d_var === "string" ? o.indexes_1d_var.trim() : "";
+    if (iv && varNames.includes(iv)) spec.indexes_1d_var = iv;
+    const pm = o.pivot_mode;
+    if (pm === "value_in_array" || pm === "index") spec.pivot_mode = pm;
+    out.push(spec);
+    if (out.length >= 16) break;
+  }
+  return out.length > 0 ? out : undefined;
+}
+
+function parseLinearContextVarNames(raw: unknown, varNames: string[]): string[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const out = raw
+    .filter((x): x is string => typeof x === "string" && varNames.includes(x.trim()))
+    .map((x) => x.trim())
+    .slice(0, 16);
+  return out.length > 0 ? out : undefined;
+}
+
 function normalizeResponse(parsed: AnalyzeAiResponse, varTypes: Record<string, string>): AnalyzeMetadata {
   const validStrategy: Strategy[] = ["GRID", "LINEAR", "GRID_LINEAR", "GRAPH"];
   const strategy = validStrategy.includes(parsed.strategy) ? parsed.strategy : "LINEAR";
@@ -292,6 +346,8 @@ function normalizeResponse(parsed: AnalyzeAiResponse, varTypes: Record<string, s
   });
 
   const keyVars = (parsed.key_vars ?? []).filter((k) => varNames.includes(k)).slice(0, 8);
+  const linearPivots = parseLinearPivots(parsed.linear_pivots, varNames);
+  const linearContextVarNames = parseLinearContextVarNames(parsed.linear_context_var_names, varNames);
   const detectedDataStructures = uniq((parsed.detected_data_structures ?? []).map(String)).slice(0, 8);
   const detectedAlgorithms = uniq((parsed.detected_algorithms ?? []).map(String)).slice(0, 8);
   const rawTc = typeof parsed.time_complexity === "string" ? parsed.time_complexity.trim() : "";
@@ -326,7 +382,9 @@ function normalizeResponse(parsed: AnalyzeAiResponse, varTypes: Record<string, s
     uses_bitmasking: !!parsed.uses_bitmasking,
     time_complexity: timeComplexity,
     key_vars: keyVars,
-    var_mapping: validMap
+    var_mapping: validMap,
+    linear_pivots: linearPivots,
+    linear_context_var_names: linearContextVarNames
   };
 }
 
@@ -418,9 +476,12 @@ async function analyzeWithAi(code: string, varTypes: Record<string, string>) {
     "인접행렬(0/1 또는 가중치)로 정점 간 연결을 나타내고 BFS/DFS/다익스트라에 쓰이면 GRAPH(표현은 graph_representation=GRID일 수 있음). 행렬체인·배낭처럼 구간/부분문제 최적값만 담으면 GRID.",
     "dict로 정점→이웃 목록이면 graph_representation=MAP. graph_var_name은 ‘그래프 자료구조’로 쓰인 변수 하나만.",
     "변수명이 graph라도 보드 게임 격자만 담으면 GRAPH 전략이 아님. 이름이 dp여도 인접 리스트로만 쓰이면 GRAPH일 수 있음(드묾)—맥락이 우선.",
+    "【격자 맵·미로·타일】board[r][c]에 '#', '.', 숫자·문자 타일만 있고 (dr,dc)로 4방/8방 이동·BFS/DFS·visited·키/문 비트마스크만 쓰면 strategy는 GRID 또는 GRID_LINEAR. graph_var_name은 비우고, board/map/maze/field를 GRAPH 패널(var_mapping)에 넣지 말 것 — 그것은 셀 격자이지 인접리스트 그래프가 아님.",
+    "GRAPH·graph_var_name은 정점 번호 기반 인접리스트/딕트/간선 집합 등 ‘정점·간선’ 모델에만. 2D 맵 배열을 그래프 전략으로 분류하지 말 것.",
     "",
     "비트마스킹(<<, >>, &, |, ^, mask state DP 등) 사용 시 uses_bitmasking=true로 반환.",
     "가중치 그래프(예: graph = [[]...], graph[u].append([cost, v]) / (v, w) / edges with weight)는 반드시 GRAPH로 분류.",
+    "다익스트라/프림: heapq+graph[now] 순회+거리 배열(distance)이면 strategy=GRAPH, graph_var_name=graph(또는 인접리스트 변수명), distance는 LINEAR 패널.",
     "가중치 그래프일 때 graph_var_name은 해당 인접리스트/간선 변수명으로 설정.",
     "GRAPH일 때 graph_representation도 함께 반환: 2D 인접행렬/격자형이면 GRID, dict/adjacency map 형태면 MAP.",
     "그래프(GRAPH)는 인접 리스트/딕트(graph[u]→이웃), 간선 리스트(edges), in_degree, BFS/DFS 탐색 등 ‘정점·간선’ 모델일 때만.",
@@ -435,8 +496,15 @@ async function analyzeWithAi(code: string, varTypes: Record<string, string>) {
     "tags 배열 값은 반드시 lower-kebab-case(소문자, 단어는 하이픈으로 연결, 공백 금지). 예: topological-sort, directed-graph.",
     "time_complexity: 코드 기준 최악 시간 복잡도 한 줄. Big-O 표기(예: O(n), O(n log n), O(V+E), O(n·m)). 변수는 코드에서 쓰인 기호(n,m,V,E 등)에 맞출 것.",
     "",
+    "【선형 시각화·linear_pivots】UI는 변수 ‘이름’으로 역할을 추측하지 않는다. 맥락으로만 채운다. 각 항목에 pivot_mode를 반드시 구분한다.",
+    "pivot_mode=index(생략 시 동일): var의 런타임 값이 정수 인덱스로 1차원 배열 첨자로 쓰인다(투포인터·슬라이딩 윈도우). 예: array[s], nums[i].",
+    "pivot_mode=value_in_array: var의 값이 ‘원소 값’이고, 그 값과 같은 원소가 있는 1차원 배열 칸에 링을 그린다. indexes_1d_var는 그 배열 변수명(해당 스텝에서 시각화되는 리스트와 일치). 예: 퀵소트에서 pivot = tmpList[0]이면 [{\"var_name\":\"pivot\",\"pivot_mode\":\"value_in_array\",\"indexes_1d_var\":\"tmpList\",\"badge\":\"pv\"}] — 변수명이 pivot이든 x든 코드 맥락으로만.",
+    "여러 1차원 배열이 있으면 index·value_in_array 모두 indexes_1d_var를 채운다. 하나뿐이면 생략 가능.",
+    "예(투포인터): [{\"var_name\":\"s\",\"pivot_mode\":\"index\",\"indexes_1d_var\":\"array\"},{\"var_name\":\"e\",\"pivot_mode\":\"index\",\"indexes_1d_var\":\"array\"}].",
+    "linear_context_var_names: 스텝 요약 줄 스칼라(선택). 피벗 값 표시용으로 pivot을 넣을 수 있음.",
+    "",
     "출력 JSON 스키마:",
-    '{"algorithm":"string","display_name":"string","strategy":"GRID|LINEAR|GRID_LINEAR|GRAPH","tags":["string"],"detected_data_structures":["string"],"detected_algorithms":["string"],"summary":"string","graph_mode":"directed|undirected","graph_var_name":"string","graph_representation":"GRID|MAP","uses_bitmasking":"boolean","time_complexity":"string","key_vars":["string"],"var_mapping":{"ROLE":{"var_name":"string","panel":"GRID|LINEAR|GRAPH|VARIABLES"}}}',
+    '{"algorithm":"string","display_name":"string","strategy":"GRID|LINEAR|GRID_LINEAR|GRAPH","tags":["string"],"detected_data_structures":["string"],"detected_algorithms":["string"],"summary":"string","graph_mode":"directed|undirected","graph_var_name":"string","graph_representation":"GRID|MAP","uses_bitmasking":"boolean","time_complexity":"string","key_vars":["string"],"var_mapping":{"ROLE":{"var_name":"string","panel":"GRID|LINEAR|GRAPH|VARIABLES"}},"linear_pivots":[{"var_name":"string","badge":"string","indexes_1d_var":"string","pivot_mode":"index|value_in_array"}],"linear_context_var_names":["string"]}',
     "",
     `[code]\n${compactCode}`,
     "",
@@ -456,7 +524,12 @@ async function analyzeWithAi(code: string, varTypes: Record<string, string>) {
     const parsed = tryParseAnalyzeJson(raw);
     if (!parsed) throw new Error("ANALYZE_PARSE_FAILED");
     const normalized = normalizeResponse(parsed, varTypes);
-    const withDeque = applyDequeHints(normalized, code, varTypes);
+    const withPartitionPivots = enrichAnalyzeMetadataWithPartitionValuePivots(
+      normalized,
+      code,
+      varTypes
+    );
+    const withDeque = applyDequeHints(withPartitionPivots, code, varTypes);
     const guarded = applyDirectionMapGuards(withDeque, code);
     return applyGraphModeInference(guarded, code);
   };

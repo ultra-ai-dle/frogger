@@ -1,7 +1,12 @@
 "use client";
 
-import { MergedTraceStep } from "@/types/prova";
+import { LinearPivotSpec, MergedTraceStep } from "@/types/prova";
 import { ThreeDVolumePanel } from "@/features/visualization/ThreeDVolumePanel";
+import {
+  formatLinearAlgoContext,
+  pointersAtIndexFromSpecs,
+  type LinearPointerMap
+} from "@/features/visualization/linearPointerHelpers";
 
 type Props = {
   step: MergedTraceStep | null;
@@ -10,6 +15,10 @@ type Props = {
   strategy?: "GRID" | "LINEAR" | "GRID_LINEAR" | "GRAPH";
   bitmaskMode?: boolean;
   bitWidth?: number;
+  linearPivots?: LinearPivotSpec[];
+  linearContextVarNames?: string[];
+  /** var_mapping 등에서 온 1차원 배열 변수명 (없으면 첫 1D 배열로 폴백) */
+  linearArrayVarName?: string;
 };
 
 function is2DArray(value: unknown): value is unknown[][] {
@@ -53,6 +62,22 @@ function getFirst2DVar(step: MergedTraceStep) {
 function getFirstLinearVar(step: MergedTraceStep) {
   const entry = Object.entries(step.vars).find(([, value]) => Array.isArray(value) && !Array.isArray(value[0]));
   return entry ? { name: entry[0], value: entry[1] as unknown[] } : null;
+}
+
+function list1DArrayKeys(step: MergedTraceStep): string[] {
+  return Object.entries(step.vars)
+    .filter(([, value]) => Array.isArray(value) && (value.length === 0 || !Array.isArray((value as unknown[])[0])))
+    .map(([k]) => k);
+}
+
+function resolveLinearVar(step: MergedTraceStep, preferredName?: string) {
+  if (preferredName) {
+    const v = step.vars[preferredName];
+    if (Array.isArray(v) && (v.length === 0 || !Array.isArray((v as unknown[])[0]))) {
+      return { name: preferredName, value: v as unknown[] };
+    }
+  }
+  return getFirstLinearVar(step);
 }
 
 function toCells(step: MergedTraceStep, grid: unknown[][], previousGrid?: unknown[][] | null) {
@@ -102,7 +127,17 @@ const GridIcon = () => (
   </svg>
 );
 
-export function GridLinearPanel({ step, fallback, previousStep, strategy, bitmaskMode = false, bitWidth = 1 }: Props) {
+export function GridLinearPanel({
+  step,
+  fallback,
+  previousStep,
+  strategy,
+  bitmaskMode = false,
+  bitWidth = 1,
+  linearPivots,
+  linearContextVarNames,
+  linearArrayVarName
+}: Props) {
   if (!step) {
     return (
       <div className="h-full flex flex-col items-center justify-center text-center px-8 gap-4">
@@ -169,7 +204,7 @@ export function GridLinearPanel({ step, fallback, previousStep, strategy, bitmas
   const focusIndex = typeof step.vars.nk === "number"
     ? step.vars.nk
     : (typeof step.vars.k === "number" ? step.vars.k : 0);
-  const linearVar = getFirstLinearVar(step);
+  const linearVar = resolveLinearVar(step, linearArrayVarName);
   const shouldRender3D = strategy !== "LINEAR" && strategy !== "GRAPH" && !!grid3DVar;
   const shouldRenderGrid = !shouldRender3D && strategy !== "LINEAR" && strategy !== "GRAPH" && !!gridVar;
   const cells = shouldRenderGrid
@@ -180,6 +215,13 @@ export function GridLinearPanel({ step, fallback, previousStep, strategy, bitmas
     )
     : [];
   const queue = linearVar?.value ?? [];
+  const vars = step.vars ?? {};
+  const oneDKeys = list1DArrayKeys(step);
+  const linearPointerMap: LinearPointerMap =
+    linearVar && Array.isArray(queue)
+      ? pointersAtIndexFromSpecs(linearPivots, vars, linearVar.name, queue.length, oneDKeys)
+      : new Map();
+  const linearCtx = formatLinearAlgoContext(vars, linearContextVarNames);
   const hasError = !!step.runtimeError;
 
   if (!shouldRenderGrid && !shouldRender3D && !linearVar) {
@@ -280,41 +322,58 @@ export function GridLinearPanel({ step, fallback, previousStep, strategy, bitmas
         </div>
       )}
 
-      {/* Queue display */}
+      {/* Linear array + 투포인터 인덱스 */}
       {!hasError && linearVar && (
-        <div className="shrink-0 border-t border-prova-line px-4 py-3">
-          <div className="flex items-center gap-2">
+        <div className="shrink-0 border-t border-prova-line px-4 py-3 space-y-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="text-[10px] text-prova-muted uppercase tracking-widest shrink-0">
               {linearVar.name}
             </span>
             <span className="text-[10px] text-prova-muted font-mono shrink-0">
-              {queue.length > 0
-                ? `${queue.length} item${queue.length > 1 ? "s" : ""}`
-                : "empty"}
+              {queue.length > 0 ? `${queue.length} cells` : "empty"}
             </span>
           </div>
-          <div className="flex items-center gap-1 mt-2 overflow-x-auto dot-scrollbar pb-1">
-            {queue.length === 0 && (
-              <span className="text-[11px] text-prova-muted italic">
-                Queue is empty
-              </span>
+          {linearCtx ? (
+            <div className="text-[10px] font-mono text-[#8fb8e8]/95 rounded border border-[#2d4f79]/40 bg-[#0c141c] px-2 py-1">
+              {linearCtx}
+            </div>
+          ) : null}
+          <div className="flex items-start gap-1 overflow-x-auto prova-scrollbar pb-1">
+            {queue.length === 0 ? (
+              <span className="text-[11px] text-prova-muted italic">배열이 비어 있습니다.</span>
+            ) : (
+              queue.map((item, i) => {
+                const ptrs = linearPointerMap.get(i) ?? [];
+                const ring = ptrs[0]?.ringClass ?? "";
+                return (
+                  <div key={`lin-${i}`} className="flex flex-col items-center gap-0.5 shrink-0 min-w-[34px]">
+                    <div className="text-[10px] text-prova-muted font-mono tabular-nums">{i}</div>
+                    <div
+                      className={`min-w-8 h-8 px-1 rounded border text-[11px] font-mono grid place-items-center border-[#2d4f79] bg-[#11243d] text-[#c9d1d9] transition-all ${ring}`}
+                    >
+                      {typeof item === "number" && bitmaskMode && Number.isInteger(item) && item >= 0
+                        ? item.toString(2).padStart(Math.max(1, bitWidth), "0")
+                        : typeof item === "object"
+                          ? JSON.stringify(item)
+                          : String(item)}
+                    </div>
+                    {ptrs.length > 0 ? (
+                      <div className="flex flex-wrap justify-center gap-0.5 max-w-[52px]">
+                        {ptrs.map((p) => (
+                          <span
+                            key={`${p.varName}-${i}`}
+                            title={p.varName}
+                            className="text-[8px] font-bold leading-none px-1 py-[1px] rounded border border-white/15 bg-black/35 text-[#e6edf3]"
+                          >
+                            {p.badge}
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })
             )}
-            {queue.map((item, i) => (
-              <span
-                key={`${JSON.stringify(item)}-${i}`}
-                className={`shrink-0 inline-flex items-center rounded border px-2 py-[3px] text-[11px] font-mono transition-all ${
-                  i === 0
-                    ? "border-prova-green/60 bg-[#0d4429]/60 text-prova-green"
-                    : "border-[#388bfd]/40 bg-[#1f3555]/60 text-[#79c0ff]"
-                }`}
-              >
-                {typeof item === "number" && bitmaskMode && Number.isInteger(item) && item >= 0
-                  ? item.toString(2).padStart(Math.max(1, bitWidth), "0")
-                  : typeof item === "object"
-                    ? JSON.stringify(item)
-                    : String(item)}
-              </span>
-            ))}
           </div>
         </div>
       )}

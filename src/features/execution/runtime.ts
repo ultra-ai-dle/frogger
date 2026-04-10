@@ -1,5 +1,6 @@
 "use client";
 
+import { provaRuntimeConfig } from "@/config/provaRuntime";
 import { WorkerDonePayload } from "@/types/prova";
 
 type RuntimeCallbacks = {
@@ -12,7 +13,6 @@ type RuntimeCallbacks = {
 
 export class ProvaRuntime {
   private worker: Worker | null = null;
-  private static readonly EXECUTION_TIMEOUT_MS = 120000;
 
   private timeoutId: ReturnType<typeof setTimeout> | null = null;
 
@@ -39,8 +39,16 @@ export class ProvaRuntime {
       this.worker?.terminate();
       this.callbacks.onTimeout();
       this.createWorker();
-    }, ProvaRuntime.EXECUTION_TIMEOUT_MS);
-    this.worker?.postMessage({ code, stdin });
+    }, provaRuntimeConfig.executionTimeoutMs);
+    this.worker?.postMessage({
+      code,
+      stdin,
+      limits: {
+        maxTraceSteps: provaRuntimeConfig.maxTraceSteps,
+        safeSerializeListLimitRoot: provaRuntimeConfig.safeSerializeListLimitRoot,
+        safeSerializeListLimitNested: provaRuntimeConfig.safeSerializeListLimitNested
+      }
+    });
   }
 
   destroy() {

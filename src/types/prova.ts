@@ -56,6 +56,23 @@ export interface BranchLines {
   branch: number[];
 }
 
+/**
+ * AI가 코드 맥락에서 판별한 선형 1D 하이라이트.
+ * var_name은 반드시 런타임 varTypes에 존재하는 변수명이어야 한다.
+ */
+export interface LinearPivotSpec {
+  var_name: string;
+  /** 셀 아래 배지 (미주면 var_name 기반 자동) */
+  badge?: string;
+  /** 이 항목이 가리키는 1차원 배열 변수명. 여러 1D 배열이 있을 때 필수에 가깝다. */
+  indexes_1d_var?: string;
+  /**
+   * index(기본): var 값이 정수 인덱스(첨자).
+   * value_in_array: var 값이 원소 값 → indexes_1d_var 배열에서 그 값과 같은 첫 칸에 표시(퀵소트 피벗 등). 이름이 pivot인지와 무관하게 맥락으로만 채운다.
+   */
+  pivot_mode?: "index" | "value_in_array";
+}
+
 export interface AnalyzeMetadata {
   algorithm: string;
   display_name: string;
@@ -72,6 +89,10 @@ export interface AnalyzeMetadata {
   time_complexity?: string;
   key_vars: string[];
   var_mapping: Record<string, { var_name: string; panel: "GRID" | "LINEAR" | "GRAPH" | "VARIABLES" }>;
+  /** 선형 시각화: 인덱스 역할을 하는 변수들 (이름 고정 매핑 금지 — 전부 AI가 채움) */
+  linear_pivots?: LinearPivotSpec[];
+  /** 상단 요약 줄에 표시할 스칼라 변수명 (예: sum_v, total) */
+  linear_context_var_names?: string[];
 }
 
 export interface WorkerDonePayload {

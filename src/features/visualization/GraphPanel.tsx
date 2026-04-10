@@ -2,7 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as d3 from "d3";
-import { MergedTraceStep } from "@/types/prova";
+import { LinearPivotSpec, MergedTraceStep } from "@/types/prova";
+import {
+  formatLinearAlgoContext,
+  pointersAtIndexFromSpecs,
+  type LinearPointerMap
+} from "@/features/visualization/linearPointerHelpers";
 
 type Props = {
   step: MergedTraceStep | null;
@@ -12,6 +17,9 @@ type Props = {
   graphMode?: "directed" | "undirected";
   bitmaskMode?: boolean;
   bitWidth?: number;
+  /** AI 분석: 선형 인덱스(투포인터 등) — 클라이언트는 이름 추측하지 않음 */
+  linearPivots?: LinearPivotSpec[];
+  linearContextVarNames?: string[];
 };
 
 type GraphNode = { id: string; label: string };
@@ -450,7 +458,7 @@ function getGridCellTone(value: unknown, positiveMax: number) {
 
 /**
  * 숫자/스칼라로 채운 2차원 표(DP, 비용행렬, visited 등). 인접 리스트와 구분해 그리드로 본다.
- * 행 길이가 들쭉날쭉하면(희소 인접) 그래프 쪽으로 남긴다.
+ * 인접 리스트는 일부 정점이 []라 minLen===0이 되므로, 그 경우는 그리드로 보지 않는다.
  */
 function looksLike2DScalarTableGrid(value: unknown): boolean {
   if (!Array.isArray(value) || value.length === 0) return false;
@@ -459,11 +467,31 @@ function looksLike2DScalarTableGrid(value: unknown): boolean {
   const lens = rows.map((r) => r.length);
   const minLen = Math.min(...lens);
   const maxLen = Math.max(...lens);
-  if (minLen === 0) return true;
+  if (maxLen === 0) return false;
+  if (minLen === 0) return false;
   if (maxLen - minLen > 4) return false;
   const flat = rows.flat();
   const scalars = flat.filter((v) => v == null || ["number", "string", "boolean"].includes(typeof v)).length;
   return scalars / flat.length >= 0.82;
+}
+
+/**
+ * 미로·맵·보드 등 2차원 격자(타일 문자/숫자). looksLike2DScalarTableGrid보다 완화해
+ * 행 길이가 약간 들쭉날쭉해도 GRAPHLIKE(인접리스트 오인)로 가지 않게 한다.
+ */
+function is2DRectangularCellGrid(value: unknown): boolean {
+  if (!Array.isArray(value) || value.length === 0) return false;
+  if (!value.every((row) => Array.isArray(row))) return false;
+  const rows = value as unknown[][];
+  const lens = rows.map((r) => r.length);
+  const minLen = Math.min(...lens);
+  const maxLen = Math.max(...lens);
+  if (minLen === 0) return false;
+  if (maxLen - minLen > 8) return false;
+  const flat = rows.flat();
+  if (flat.length === 0) return false;
+  const scalars = flat.filter((v) => v == null || ["number", "string", "boolean"].includes(typeof v)).length;
+  return scalars / flat.length >= 0.68;
 }
 
 function detectGraphLike(value: unknown) {
@@ -472,6 +500,7 @@ function detectGraphLike(value: unknown) {
     if (value.length === 0) return false;
     if (!value.every((row) => Array.isArray(row))) return false;
     if (looksLike2DScalarTableGrid(value)) return false;
+    if (is2DRectangularCellGrid(value)) return false;
     return true;
   }
   if (typeof value === "object") {
@@ -489,8 +518,9 @@ function isClearlyGridLike(value: unknown): boolean {
   const rowLens = rows.map((r) => r.length);
   const minLen = Math.min(...rowLens);
   const maxLen = Math.max(...rowLens);
-  // Rectangular-ish 2D scalar matrix should be treated as GRID first.
-  if (minLen === 0 || maxLen === 0) return true;
+  // 빈 행이 섞인 2중 리스트(인접 리스트 등)는 그리드가 아님.
+  if (maxLen === 0) return false;
+  if (minLen === 0) return false;
   const rectangular = maxLen - minLen <= 2;
   const scalarRatio = rows.flat().filter((v) => v == null || ["number", "string", "boolean"].includes(typeof v)).length
     / Math.max(1, rows.flat().length);
@@ -923,7 +953,17 @@ function GraphCanvas({
   );
 }
 
-export function GraphPanel({ step, graphVarName, graphVarNames = [], traceSteps = [], graphMode = "undirected", bitmaskMode = false, bitWidth = 1 }: Props) {
+export function GraphPanel({
+  step,
+  graphVarName,
+  graphVarNames = [],
+  traceSteps = [],
+  graphMode = "undirected",
+  bitmaskMode = false,
+  bitWidth = 1,
+  linearPivots,
+  linearContextVarNames
+}: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const positionRef = useRef<Map<string, { x: number; y: number; vx?: number; vy?: number }>>(new Map());
   const [array2DModeByVar, setArray2DModeByVar] = useState<Record<string, "GRID" | "GRAPH">>({});
@@ -972,6 +1012,8 @@ export function GraphPanel({ step, graphVarName, graphVarNames = [], traceSteps 
             ? "ARRAY2D"
           : looksLike2DScalarTableGrid(value)
             ? "ARRAY2D"
+          : is2DRectangularCellGrid(value)
+            ? "ARRAY2D"
           : detectGraphLike(value)
             ? "GRAPHLIKE"
             : is2DArray(value)
@@ -1008,7 +1050,11 @@ export function GraphPanel({ step, graphVarName, graphVarNames = [], traceSteps 
           return;
         }
         if (!next[key]) {
-          next[key] = parsed.graphKeys.has(key) ? "GRAPH" : "GRID";
+          const preferGridView =
+            looksLike2DScalarTableGrid(value) ||
+            isClearlyGridLike(value) ||
+            is2DRectangularCellGrid(value);
+          next[key] = parsed.graphKeys.has(key) && !preferGridView ? "GRAPH" : "GRID";
         }
       });
       return next;
@@ -1019,16 +1065,34 @@ export function GraphPanel({ step, graphVarName, graphVarNames = [], traceSteps 
     return <div className="h-full grid place-items-center text-sm text-prova-muted">실행 후 그래프가 표시됩니다.</div>;
   }
 
+  const vars = step.vars ?? {};
+  const array1DKeys = parsed.structures.filter((s) => s.kind === "ARRAY1D").map((s) => s.key);
+  const linearContextLine = formatLinearAlgoContext(vars, linearContextVarNames);
+
   return (
     <div ref={containerRef} className="h-full w-full p-3">
       <div className="h-full w-full overflow-auto prova-scrollbar space-y-3">
+        {linearContextLine ? (
+          <div
+            className="rounded border border-[#2d4f79]/45 bg-[#0c141c] px-2 py-1.5 text-[10px] font-mono text-[#9ac7ff]/95"
+            title="이번 스텝의 비교·합 등 (트레이스에 노출된 경우)"
+          >
+            {linearContextLine}
+          </div>
+        ) : null}
         {/* Structure regions */}
         <div className="space-y-2">
           {parsed.structures.map((structure) => {
             const canToggleGraphGrid = structure.kind === "GRAPHLIKE" && canGraphLikeUseGridView(structure.value);
+            const preferGridDefault =
+              looksLike2DScalarTableGrid(structure.value) ||
+              isClearlyGridLike(structure.value) ||
+              is2DRectangularCellGrid(structure.value);
+            const default2dMode =
+              parsed.graphKeys.has(structure.key) && !preferGridDefault ? "GRAPH" : "GRID";
             const resolvedMode = !canToggleGraphGrid && structure.kind === "GRAPHLIKE"
               ? "GRAPH"
-              : (array2DModeByVar[structure.key] ?? (parsed.graphKeys.has(structure.key) ? "GRAPH" : "GRID"));
+              : (array2DModeByVar[structure.key] ?? default2dMode);
             return (
             <div key={structure.key} className="rounded border border-prova-line bg-[#0f141a] p-2">
               <div className="flex items-center justify-between mb-2">
@@ -1100,26 +1164,53 @@ export function GraphPanel({ step, graphVarName, graphVarNames = [], traceSteps 
                 </div>
               ) : structure.kind === "ARRAY1D" ? (
                 <div className="overflow-auto">
+                  {(() => {
+                    const arr = structure.value as unknown[];
+                    const slotLen = Math.max(1, maxArrayLenByVar[structure.key] ?? arr.length);
+                    const ptrMap: LinearPointerMap = pointersAtIndexFromSpecs(
+                      linearPivots,
+                      vars,
+                      structure.key,
+                      arr.length,
+                      array1DKeys
+                    );
+                    return (
                   <div className="flex items-start gap-1">
-                    {Array.from({ length: Math.max(1, maxArrayLenByVar[structure.key] ?? 0) }, (_, i) => {
-                      const arr = structure.value as unknown[];
+                    {Array.from({ length: slotLen }, (_, i) => {
                       const hasValue = i < arr.length;
+                      const ptrs = hasValue ? ptrMap.get(i) ?? [] : [];
+                      const ringExtra = ptrs[0]?.ringClass ?? "";
                       return (
-                        <div key={`${structure.key}-slot-${i}`} className="flex flex-col items-center gap-[2px]">
-                          <div className="text-[10px] text-prova-muted font-mono">{i}</div>
+                        <div key={`${structure.key}-slot-${i}`} className="flex flex-col items-center gap-0.5 min-w-[34px]">
+                          <div className="text-[10px] text-prova-muted font-mono tabular-nums">{i}</div>
                           <div
-                            className={`min-w-8 h-8 px-1 rounded border text-[11px] font-mono grid place-items-center transition-colors ${
+                            className={`min-w-8 h-8 px-1 rounded border text-[11px] font-mono grid place-items-center transition-all duration-150 ${
                               hasValue
-                                ? "border-[#2d4f79] bg-[#11243d] text-[#c9d1d9]"
+                                ? `border-[#2d4f79] bg-[#11243d] text-[#c9d1d9] ${ringExtra}`
                                 : "border-[#2a2f36] bg-[#0d1117] text-[#6e7681]"
                             }`}
                           >
                             {hasValue ? formatScalar(arr[i], bitmaskMode, bitWidth) : ""}
                           </div>
+                          {ptrs.length > 0 ? (
+                            <div className="flex flex-wrap justify-center gap-0.5 max-w-[52px]">
+                              {ptrs.map((p) => (
+                                <span
+                                  key={`${structure.key}-${i}-${p.varName}`}
+                                  className="text-[8px] font-bold leading-none px-1 py-[1px] rounded border border-white/15 bg-black/35 text-[#e6edf3]"
+                                  title={p.varName}
+                                >
+                                  {p.badge}
+                                </span>
+                              ))}
+                            </div>
+                          ) : null}
                         </div>
                       );
                     })}
                   </div>
+                    );
+                  })()}
                 </div>
               ) : (
                 <div className="rounded border border-[#2d4f79] bg-[#0f1f33] p-2 overflow-auto">
