@@ -34,6 +34,7 @@ export interface RawTraceStep {
   vars: Record<string, unknown>;
   scope: ScopeInfo;
   parent_frames: ParentFrame[];
+  stdout?: string[];
   runtimeError: RuntimeErrorInfo | null;
 }
 
@@ -58,9 +59,19 @@ export interface BranchLines {
 export interface AnalyzeMetadata {
   algorithm: string;
   display_name: string;
-  strategy: "GRID" | "LINEAR" | "GRID_LINEAR";
+  strategy: "GRID" | "LINEAR" | "GRID_LINEAR" | "GRAPH";
+  tags: string[];
+  detected_data_structures?: string[];
+  detected_algorithms?: string[];
+  summary?: string;
+  graph_mode?: "directed" | "undirected";
+  graph_var_name?: string;
+  graph_representation?: "GRID" | "MAP";
+  uses_bitmasking?: boolean;
+  /** AI 추정 최악 시간 복잡도 (예: O(V+E), O(n log n)) */
+  time_complexity?: string;
   key_vars: string[];
-  var_mapping: Record<string, { var_name: string; panel: "GRID" | "LINEAR" | "VARIABLES" }>;
+  var_mapping: Record<string, { var_name: string; panel: "GRID" | "LINEAR" | "GRAPH" | "VARIABLES" }>;
 }
 
 export interface WorkerDonePayload {

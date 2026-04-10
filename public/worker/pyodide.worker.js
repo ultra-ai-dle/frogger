@@ -1,60 +1,21 @@
 /* eslint-disable no-restricted-globals */
 
+let pyodideReadyPromise = null;
+let pyodide = null;
+
 function inferType(value) {
   if (Array.isArray(value) && Array.isArray(value[0])) return "list2d";
   if (Array.isArray(value)) return "list";
   if (typeof value === "number") return "int";
   if (typeof value === "boolean") return "bool";
+  if (value === null) return "none";
   return typeof value;
-}
-
-function buildMockTrace(kind) {
-  const trace = [];
-  const visited = Array.from({ length: 5 }, () => Array.from({ length: 5 }, () => false));
-  const queue = [
-    [0, 0],
-    [1, 0],
-    [0, 1],
-    [2, 1]
-  ];
-  const lines = [4, 6, 7, 8, 10, 12, 6, 7, 10, 12, 16];
-  for (let i = 0; i < lines.length; i += 1) {
-    const cur = queue[i % queue.length];
-    if (i > 0 && i < 8) visited[Math.min(cur[0], 4)][Math.min(cur[1], 4)] = true;
-    trace.push({
-      step: i,
-      line: lines[i],
-      vars: {
-        queue: queue.slice(0, Math.max(1, 4 - (i % 4))),
-        visited,
-        r: cur[0],
-        c: cur[1],
-        step: i
-      },
-      scope: { func: "bfs", depth: 1 },
-      parent_frames: [{ scope: { func: "<global>", depth: 0 }, vars: { grid: "[5x5]" } }],
-      runtimeError: null
-    });
-  }
-
-  if (kind === "runtimeError") {
-    const last = trace[trace.length - 1];
-    last.line = 17;
-    last.vars.r = 5;
-    last.runtimeError = {
-      type: "IndexError",
-      message: "list index out of range",
-      line: 17
-    };
-  }
-
-  return trace;
 }
 
 function extractVarTypesUnion(rawTrace) {
   const result = {};
   rawTrace.forEach((step) => {
-    Object.entries(step.vars).forEach(([key, value]) => {
+    Object.entries(step.vars || {}).forEach(([key, value]) => {
       if (!result[key]) {
         result[key] = inferType(value);
       }
@@ -63,28 +24,372 @@ function extractVarTypesUnion(rawTrace) {
   return result;
 }
 
-self.postMessage({ type: "ready" });
+async function ensurePyodideReady() {
+  if (pyodide) return pyodide;
+  if (!pyodideReadyPromise) {
+    pyodideReadyPromise = (async () => {
+      importScripts("https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js");
+      pyodide = await self.loadPyodide({});
+      self.postMessage({ type: "ready" });
+      return pyodide;
+    })();
+  }
+  return pyodideReadyPromise;
+}
+
+async function runWithTrace(code, stdin) {
+  const runtime = await ensurePyodideReady();
+  runtime.globals.set("__prova_code", String(code));
+  runtime.globals.set("__prova_stdin", String(stdin ?? ""));
+
+  const resultJson = await runtime.runPythonAsync(`
+import json
+import sys
+import traceback
+import types
+import ast
+import collections
+import math
+
+_prova_code = __prova_code
+_prova_stdin = __prova_stdin
+
+class _ProvaStdin:
+    def __init__(self, text):
+        self.lines = text.splitlines(True)
+        self.idx = 0
+    def readline(self):
+        if self.idx >= len(self.lines):
+            return ""
+        v = self.lines[self.idx]
+        self.idx += 1
+        return v
+
+_stdout_buffer = ""
+_stdout_lines = []
+_NOISY_OUTPUT_MARKERS = [
+    "RuntimeWarning: assigning None to unbound local '_'",
+]
+def _refresh_stdout_lines():
+    global _stdout_lines
+    lines = [line for line in _stdout_buffer.splitlines() if line != ""]
+    _stdout_lines = [
+        line for line in lines
+        if not any(marker in line for marker in _NOISY_OUTPUT_MARKERS)
+    ]
+
+class _ProvaStdout:
+    def write(self, s):
+        global _stdout_buffer
+        _stdout_buffer += str(s)
+        _refresh_stdout_lines()
+    def flush(self):
+        return None
+
+sys.stdin = _ProvaStdin(_prova_stdin)
+sys.stdout = _ProvaStdout()
+sys.stderr = _ProvaStdout()
+
+_trace = []
+_step = 0
+_last_line = 0
+_trace_disabled = False
+_trace_truncated = False
+_MAX_TRACE_STEPS = 10000
+
+def _collect_user_symbols(src):
+    symbols = set()
+    try:
+        tree = ast.parse(src)
+    except Exception:
+        return symbols
+
+    def _collect_target(target):
+        if isinstance(target, ast.Name):
+            symbols.add(target.id)
+            return
+        if isinstance(target, (ast.Tuple, ast.List)):
+            for elt in target.elts:
+                _collect_target(elt)
+
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            symbols.add(node.name)
+        elif isinstance(node, ast.Assign):
+            for t in node.targets:
+                _collect_target(t)
+        elif isinstance(node, ast.AnnAssign):
+            _collect_target(node.target)
+        elif isinstance(node, ast.AugAssign):
+            _collect_target(node.target)
+        elif isinstance(node, ast.For):
+            _collect_target(node.target)
+        elif isinstance(node, ast.With):
+            for item in node.items:
+                if item.optional_vars is not None:
+                    _collect_target(item.optional_vars)
+        elif isinstance(node, ast.ExceptHandler):
+            if isinstance(node.name, str):
+                symbols.add(node.name)
+        elif isinstance(node, ast.Import):
+            for alias in node.names:
+                symbols.add((alias.asname or alias.name.split(".")[0]))
+        elif isinstance(node, ast.ImportFrom):
+            for alias in node.names:
+                if alias.name == "*":
+                    continue
+                symbols.add((alias.asname or alias.name))
+    return symbols
+
+_USER_SYMBOLS = _collect_user_symbols(_prova_code)
+
+def _safe(v, depth=0):
+    if depth > 2:
+        return repr(v)
+    if v is None or isinstance(v, (bool, int, float, str)):
+        if isinstance(v, float) and not math.isfinite(v):
+            if math.isnan(v):
+                return "NaN"
+            return "Infinity" if v > 0 else "-Infinity"
+        return v
+    if isinstance(v, (list, tuple, set, collections.deque)):
+        arr = list(v)
+        limit = 30 if depth == 0 else 12
+        sliced = arr[:limit]
+        mapped = [_safe(x, depth + 1) for x in sliced]
+        if len(arr) > limit:
+            mapped.append(f"...(+{len(arr) - limit})")
+        return mapped
+    if isinstance(v, dict):
+        out = {}
+        count = 0
+        limit = 30 if depth == 0 else 12
+        for k, val in v.items():
+            if count >= limit:
+                break
+            out[str(_safe(k, depth + 1))] = _safe(val, depth + 1)
+            count += 1
+        if len(v) > limit:
+            out["..."] = f"+{len(v) - limit} items"
+        return out
+    return repr(v)
+
+def _should_skip_local(name, value, *, require_user_symbol=False):
+    if name.startswith("__"):
+        return True
+    if name in {"stdin", "input", "print"}:
+        return True
+    if require_user_symbol and name not in _USER_SYMBOLS:
+        return True
+    if isinstance(value, (_ProvaStdin, _ProvaStdout)):
+        return True
+    if isinstance(value, types.ModuleType):
+        return True
+    if isinstance(value, type):
+        return True
+    if isinstance(value, (types.BuiltinFunctionType, types.BuiltinMethodType, types.MethodType, types.FunctionType)):
+        return True
+    if callable(value):
+        return True
+    # Bound-method repr noise such as "<bound method _ProvaStdin.readline ...>"
+    text = repr(value)
+    if "_ProvaStdin" in text or "_ProvaStdout" in text:
+        return True
+    return False
+
+def _frame_depth(frame):
+    depth = 0
+    cur = frame
+    while cur is not None:
+        depth += 1
+        cur = cur.f_back
+    return depth
+
+def _tracer(frame, event, arg):
+    global _step, _last_line, _trace_disabled, _trace_truncated
+    if _trace_disabled:
+        return None
+    if frame.f_code.co_filename != "<prova_user_code>":
+        return _tracer
+    if event not in ("line", "call"):
+        return _tracer
+
+    if _step >= _MAX_TRACE_STEPS:
+        _trace_disabled = True
+        _trace_truncated = True
+        return None
+
+    # Emit explicit call-site step so one-line calls like
+    # "for i in truth: dfs(i)" are visible in step navigation.
+    if event == "call" and frame.f_back is not None and frame.f_back.f_code.co_filename == "<prova_user_code>":
+        caller_locals = {}
+        for ck, cv in frame.f_back.f_locals.items():
+            if _should_skip_local(ck, cv):
+                continue
+            caller_locals[ck] = _safe(cv)
+        _trace.append({
+            "step": _step,
+            "line": int(frame.f_back.f_lineno),
+            "vars": caller_locals,
+            "scope": { "func": frame.f_back.f_code.co_name, "depth": _frame_depth(frame.f_back) },
+            "parent_frames": [],
+            "stdout": list(_stdout_lines),
+            "runtimeError": None,
+            "event": "callsite"
+        })
+        _last_line = int(frame.f_back.f_lineno)
+        _step += 1
+
+    locals_map = {}
+    is_module_scope = frame.f_code.co_name == "<module>"
+    # 1) frame locals (function-local state)
+    for k, v in frame.f_locals.items():
+        if _should_skip_local(k, v, require_user_symbol=is_module_scope):
+            continue
+        locals_map[k] = _safe(v)
+    # 2) user globals (keep visualization structures visible inside function scope)
+    for gk, gv in frame.f_globals.items():
+        if gk in locals_map:
+            continue
+        if _should_skip_local(gk, gv, require_user_symbol=True):
+            continue
+        locals_map[gk] = _safe(gv)
+
+    _trace.append({
+        "step": _step,
+        "line": int(frame.f_lineno),
+        "vars": locals_map,
+        "scope": { "func": frame.f_code.co_name, "depth": _frame_depth(frame) },
+        "parent_frames": [],
+        "stdout": list(_stdout_lines),
+        "runtimeError": None
+    })
+    _last_line = int(frame.f_lineno)
+    _step += 1
+    return _tracer
+
+# step 0: before execution
+_trace.append({
+    "step": 0,
+    "line": 0,
+    "vars": {},
+    "scope": { "func": "<global>", "depth": 1 },
+    "parent_frames": [],
+    "stdout": [],
+    "runtimeError": None
+})
+_step = 1
+
+try:
+    compiled = compile(_prova_code, "<prova_user_code>", "exec")
+    glb = {"__name__": "__main__"}
+    sys.settrace(_tracer)
+    exec(compiled, glb, glb)
+    final_vars = {}
+    for k, v in glb.items():
+        if _should_skip_local(k, v, require_user_symbol=True):
+            continue
+        final_vars[k] = _safe(v)
+    _trace.append({
+        "step": _step,
+        "line": _last_line,
+        "vars": final_vars,
+        "scope": { "func": "<global>", "depth": 1 },
+        "parent_frames": [],
+        "stdout": list(_stdout_lines),
+        "runtimeError": None
+    })
+    if _trace_truncated:
+        truncated_stdout = list(_stdout_lines)
+        truncated_stdout.append("[warn] 추적 단계 한도를 초과해 일부 단계가 생략되었습니다.")
+        _trace.append({
+            "step": _step + 1,
+            "line": _last_line,
+            "vars": final_vars,
+            "scope": { "func": "<global>", "depth": 1 },
+            "parent_frames": [],
+            "stdout": truncated_stdout,
+            "runtimeError": None
+        })
+except Exception as e:
+    tb = traceback.extract_tb(e.__traceback__)
+    line_no = 0
+    for t in reversed(tb):
+        if t.filename == "<prova_user_code>":
+            line_no = int(t.lineno)
+            break
+    _trace.append({
+        "step": _step,
+        "line": line_no,
+        "vars": {},
+        "scope": { "func": "<global>", "depth": 1 },
+        "parent_frames": [],
+        "stdout": list(_stdout_lines),
+        "runtimeError": {
+            "type": e.__class__.__name__,
+            "message": str(e),
+            "line": line_no
+        }
+    })
+finally:
+    sys.settrace(None)
+
+json.dumps({"rawTrace": _trace})
+  `);
+
+  const parsed = JSON.parse(String(resultJson));
+  return parsed.rawTrace ?? [];
+}
 
 self.onmessage = async (event) => {
   const { code = "", stdin = "" } = event.data || {};
-  const signal = `${code}\n${stdin}`.toLowerCase();
-  let kind = "normal";
-  if (signal.includes("timeout")) kind = "timeout";
-  if (signal.includes("fallback")) kind = "fallback";
-  if (signal.includes("indexerror") || signal.includes("error_case")) kind = "runtimeError";
-
-  if (kind === "timeout") {
-    await new Promise((r) => setTimeout(r, 6000));
+  if (String(code).trim().length === 0) {
+    self.postMessage({
+      type: "invalid_input",
+      message: "코드를 입력한 후 디버깅을 시작하세요."
+    });
+    return;
+  }
+  if (String(stdin).trim().length === 0) {
+    self.postMessage({
+      type: "invalid_input",
+      message: "예시 입력(stdin)을 입력한 후 디버깅을 시작하세요."
+    });
     return;
   }
 
-  const rawTrace = buildMockTrace(kind);
-  const varTypes = extractVarTypesUnion(rawTrace);
-  self.postMessage({
-    type: "done",
-    rawTrace,
-    branchLines: { loop: [6], branch: [8, 12] },
-    varTypes,
-    scenario: kind
-  });
+  try {
+    const rawTrace = await runWithTrace(code, stdin);
+    const varTypes = extractVarTypesUnion(rawTrace);
+    self.postMessage({
+      type: "done",
+      rawTrace,
+      branchLines: { loop: [], branch: [] },
+      varTypes
+    });
+  } catch (error) {
+    self.postMessage({
+      type: "done",
+      rawTrace: [
+        {
+          step: 0,
+          line: 0,
+          vars: {},
+          scope: { func: "<global>", depth: 1 },
+          parent_frames: [],
+          stdout: [],
+          runtimeError: {
+            type: "WorkerError",
+            message: String(error),
+            line: 0
+          }
+        }
+      ],
+      branchLines: { loop: [], branch: [] },
+      varTypes: {}
+    });
+  }
 };
+
+// Kick off runtime loading immediately.
+ensurePyodideReady();

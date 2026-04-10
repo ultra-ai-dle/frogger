@@ -7,10 +7,12 @@ type RuntimeCallbacks = {
   onDone: (payload: WorkerDonePayload & { scenario?: string }) => void;
   onError: (error: Error) => void;
   onTimeout: () => void;
+  onInvalidInput: (message: string) => void;
 };
 
 export class ProvaRuntime {
   private worker: Worker | null = null;
+  private static readonly EXECUTION_TIMEOUT_MS = 120000;
 
   private timeoutId: ReturnType<typeof setTimeout> | null = null;
 
@@ -21,6 +23,14 @@ export class ProvaRuntime {
   }
 
   run(code: string, stdin: string) {
+    if (code.trim().length === 0) {
+      this.callbacks.onInvalidInput("코드를 입력한 후 디버깅을 시작하세요.");
+      return;
+    }
+    if (stdin.trim().length === 0) {
+      this.callbacks.onInvalidInput("예시 입력(stdin)을 입력한 후 디버깅을 시작하세요.");
+      return;
+    }
     if (!this.worker) {
       this.createWorker();
     }
@@ -29,7 +39,7 @@ export class ProvaRuntime {
       this.worker?.terminate();
       this.callbacks.onTimeout();
       this.createWorker();
-    }, 5000);
+    }, ProvaRuntime.EXECUTION_TIMEOUT_MS);
     this.worker?.postMessage({ code, stdin });
   }
 
@@ -51,6 +61,11 @@ export class ProvaRuntime {
       if (data.type === "done") {
         this.clearTimeout();
         this.callbacks.onDone(data);
+        return;
+      }
+      if (data.type === "invalid_input") {
+        this.clearTimeout();
+        this.callbacks.onInvalidInput(String(data.message ?? "입력 코드가 비어 있습니다."));
       }
     };
     this.worker.onerror = (event) => {
