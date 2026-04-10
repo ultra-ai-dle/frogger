@@ -323,7 +323,7 @@ try:
             "stdout": truncated_stdout,
             "runtimeError": None
         })
-except Exception as e:
+except BaseException as e:
     tb = traceback.extract_tb(e.__traceback__)
     line_no = 0
     for t in reversed(tb):
@@ -398,6 +398,10 @@ self.onmessage = async (event) => {
       varTypes
     });
   } catch (error) {
+    const message =
+      error instanceof Error
+        ? `${error.name}: ${error.message}${error.stack ? `\n${error.stack}` : ""}`
+        : String(error);
     self.postMessage({
       type: "done",
       rawTrace: [
@@ -410,7 +414,7 @@ self.onmessage = async (event) => {
           stdout: [],
           runtimeError: {
             type: "WorkerError",
-            message: String(error),
+            message,
             line: 0
           }
         }

@@ -59,7 +59,8 @@ export class ProvaRuntime {
 
   private createWorker() {
     this.worker?.terminate();
-    this.worker = new Worker("/worker/pyodide.worker.js");
+    const workerUrl = `/worker/pyodide.worker.js?v=${encodeURIComponent(provaRuntimeConfig.workerScriptVersion)}`;
+    this.worker = new Worker(workerUrl);
     this.worker.onmessage = (event: MessageEvent) => {
       const data = event.data;
       if (data.type === "ready") {

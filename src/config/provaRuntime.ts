@@ -3,6 +3,12 @@
  * 배포 없이 이 파일만 수정해 조절하면 됩니다.
  */
 export const provaRuntimeConfig = {
+  /**
+   * 워커 스크립트 캐시 버전.
+   * pyodide.worker.js를 수정했는데 브라우저가 옛 파일을 쓰면 이 값을 올리세요.
+   */
+  workerScriptVersion: "2026-04-10-1",
+
   /** 한 번의 디버깅 실행이 허용하는 최대 시간(ms). 초과 시 워커가 종료됩니다. */
   executionTimeoutMs: 120_000,
 
