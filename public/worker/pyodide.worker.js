@@ -156,17 +156,25 @@ def _collect_user_symbols(src):
 _USER_SYMBOLS = _collect_user_symbols(_prova_code)
 
 def _safe(v, depth=0):
-    if depth > 2:
-        return repr(v)
     if v is None or isinstance(v, (bool, int, float, str)):
         if isinstance(v, float) and not math.isfinite(v):
             if math.isnan(v):
                 return "NaN"
             return "Infinity" if v > 0 else "-Infinity"
         return v
+    if depth > 2:
+        return repr(v)
     if isinstance(v, (list, tuple, set, collections.deque)):
         arr = list(v)
-        limit = _PROVA_SAFE_L0 if depth == 0 else _PROVA_SAFE_LN
+        # Keep full key-mask vectors (visited[r][c][0..63]) for projection UI.
+        # This is value-shape based (bool-ish list), not variable-name based.
+        boolish_vector = (
+            depth >= 2
+            and len(arr) > 0
+            and len(arr) <= 128
+            and all(isinstance(x, (bool, int)) for x in arr)
+        )
+        limit = len(arr) if boolish_vector else (_PROVA_SAFE_L0 if depth == 0 else _PROVA_SAFE_LN)
         sliced = arr[:limit]
         mapped = [_safe(x, depth + 1) for x in sliced]
         if len(arr) > limit:
@@ -330,19 +338,30 @@ except BaseException as e:
         if t.filename == "<prova_user_code>":
             line_no = int(t.lineno)
             break
-    _trace.append({
-        "step": _step,
-        "line": line_no,
-        "vars": {},
-        "scope": { "func": "<global>", "depth": 1 },
-        "parent_frames": [],
-        "stdout": list(_stdout_lines),
-        "runtimeError": {
-            "type": e.__class__.__name__,
-            "message": str(e),
-            "line": line_no
-        }
-    })
+    if e.__class__.__name__ == "SystemExit":
+        _trace.append({
+            "step": _step,
+            "line": line_no if line_no else _last_line,
+            "vars": {},
+            "scope": { "func": "<global>", "depth": 1 },
+            "parent_frames": [],
+            "stdout": list(_stdout_lines),
+            "runtimeError": None
+        })
+    else:
+        _trace.append({
+            "step": _step,
+            "line": line_no,
+            "vars": {},
+            "scope": { "func": "<global>", "depth": 1 },
+            "parent_frames": [],
+            "stdout": list(_stdout_lines),
+            "runtimeError": {
+                "type": e.__class__.__name__,
+                "message": str(e),
+                "line": line_no
+            }
+        })
 finally:
     sys.settrace(None)
 
