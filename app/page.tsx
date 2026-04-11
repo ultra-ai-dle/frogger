@@ -12,7 +12,8 @@ import { resolveGraphMode } from "@/lib/graphModeInference";
 import { normalizeAndDedupeTags } from "@/lib/tagNormalize";
 import { getFromCache, saveToCache } from "@/lib/analyzeCache";
 import { IconFiles, IconSettings, IconRefresh, IconExpand, IconWarning, IconPencil } from "@/components/icons";
-import { detectLanguageFromCode, PY_KEYWORDS, JS_KEYWORDS } from "@/lib/languageDetection";
+import { detectLanguageFromCode } from "@/lib/languageDetection";
+import { highlightJsLine, highlightPythonLine } from "@/lib/syntaxHighlight";
 
 /* ── Helpers ─────────────────────────────────────────────── */
 function runButtonLabel(
@@ -32,89 +33,6 @@ function runButtonLabel(
   if (status === "reinitializing") return "초기화 중...";
   if (status === "error") return "디버깅 불가";
   return hasTrace ? "▶ 디버깅 다시 실행" : "▶ 디버깅 시작";
-}
-
-function highlightJsLine(
-  line: string,
-): Array<{ text: string; className: string }> {
-  const tokens: Array<{ text: string; className: string }> = [];
-  const pattern =
-    /(\/\/.*$|`(?:\\.|[^`\\])*`|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\b[A-Za-z_$][A-Za-z0-9_$]*\b|\b\d+(?:\.\d+)?\b)/g;
-  let lastIndex = 0;
-  let match: RegExpExecArray | null = pattern.exec(line);
-  while (match) {
-    if (match.index > lastIndex) {
-      tokens.push({
-        text: line.slice(lastIndex, match.index),
-        className: "text-[#c9d1d9]",
-      });
-    }
-    const token = match[0];
-    if (token.startsWith("//")) {
-      tokens.push({ text: token, className: "text-[#8b949e] italic" });
-    } else if (/^["`']/.test(token)) {
-      tokens.push({ text: token, className: "text-[#a5d6ff]" });
-    } else if (/^\d/.test(token)) {
-      tokens.push({ text: token, className: "text-[#79c0ff]" });
-    } else if (JS_KEYWORDS.has(token)) {
-      tokens.push({ text: token, className: "text-[#ff7b72]" });
-    } else {
-      tokens.push({ text: token, className: "text-[#d2a8ff]" });
-    }
-    lastIndex = match.index + token.length;
-    match = pattern.exec(line);
-  }
-  if (lastIndex < line.length) {
-    tokens.push({ text: line.slice(lastIndex), className: "text-[#c9d1d9]" });
-  }
-  if (tokens.length === 0) {
-    tokens.push({ text: " ", className: "text-[#c9d1d9]" });
-  }
-  return tokens;
-}
-
-function highlightPythonLine(
-  line: string,
-): Array<{ text: string; className: string }> {
-  const tokens: Array<{ text: string; className: string }> = [];
-  const pattern =
-    /(#.*$|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\b[A-Za-z_][A-Za-z0-9_]*\b|\b\d+(?:\.\d+)?\b)/g;
-  let lastIndex = 0;
-  let match: RegExpExecArray | null = pattern.exec(line);
-
-  while (match) {
-    if (match.index > lastIndex) {
-      tokens.push({
-        text: line.slice(lastIndex, match.index),
-        className: "text-[#c9d1d9]",
-      });
-    }
-    const token = match[0];
-
-    if (token.startsWith("#")) {
-      tokens.push({ text: token, className: "text-[#8b949e] italic" });
-    } else if (token.startsWith('"') || token.startsWith("'")) {
-      tokens.push({ text: token, className: "text-[#a5d6ff]" });
-    } else if (/^\d/.test(token)) {
-      tokens.push({ text: token, className: "text-[#79c0ff]" });
-    } else if (PY_KEYWORDS.has(token)) {
-      tokens.push({ text: token, className: "text-[#ff7b72]" });
-    } else {
-      tokens.push({ text: token, className: "text-[#d2a8ff]" });
-    }
-
-    lastIndex = match.index + token.length;
-    match = pattern.exec(line);
-  }
-
-  if (lastIndex < line.length) {
-    tokens.push({ text: line.slice(lastIndex), className: "text-[#c9d1d9]" });
-  }
-
-  if (tokens.length === 0) {
-    tokens.push({ text: " ", className: "text-[#c9d1d9]" });
-  }
-  return tokens;
 }
 
 function lineFromOffset(text: string, offset: number) {

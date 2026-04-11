@@ -97,10 +97,10 @@ it('GridLinearPanel은 step이 null일 때 플레이스홀더를 보여준다')
 
 #### 2B. 구문 하이라이팅
 
-- [ ] `src/lib/syntaxHighlight.ts` 생성
-- [ ] `page.tsx` → `highlightJsLine()`(L292), `highlightPythonLine()`(L331) 추출
-- [ ] 공통 토크나이징 로직 통합 (먼저 그대로 추출 → 테스트 통과 후 통합)
-- [ ] 유닛 테스트 작성 → `npm run test` 통과
+- [x] `src/lib/syntaxHighlight.ts` 생성
+- [x] `page.tsx` → `highlightJsLine()`, `highlightPythonLine()` 추출
+- [x] 공통 `tokenizeLine(line, config)` 헬퍼로 통합
+- [x] 유닛 테스트 작성 → 27개 통과
 
 #### 2C. Trace 정제
 
@@ -218,3 +218,10 @@ it('GridLinearPanel은 step이 null일 때 플레이스홀더를 보여준다')
 ## 발견된 버그 (리팩토링 중 발견, 별도 수정 필요)
 
 - [ ] **`detectLanguageFromCode` 주석 내 키워드 반영 버그** — 라인 구문 스코어링에서는 주석(`#`, `//`)을 제거하지만, 단어 키워드 매칭에서는 원본 텍스트(`compact`)를 사용하여 주석 내 키워드도 스코어에 반영됨. `compact` 대신 주석 제거된 텍스트를 사용해야 함. (`src/lib/languageDetection.ts`)
+- [ ] **`highlightJsLine` $ 접두 식별자 버그** — JS 토크나이저의 식별자 정규식 `\b[A-Za-z_$][A-Za-z0-9_$]*\b`에서 `\b`가 `$` 앞에서 word boundary로 동작하지 않아, `$el` 같은 식별자가 `"$"(갭) + "el"(식별자)`로 분리됨. `\b` 대신 `(?<![A-Za-z0-9_$])` lookbehind 사용 등으로 수정 필요. (`src/lib/syntaxHighlight.ts`)
+
+### 리팩토링 중 발견된 버그 처리 원칙
+- 테스트는 **현재 동작**(버그 포함)에 맞춰 작성하고, 테스트 내에 TODO 주석으로 버그를 표시한다
+- 소스 코드의 버그 위치에도 TODO 주석을 남긴다
+- 이 섹션에 버그 체크리스트를 추가한다
+- 버그 수정은 리팩토링 완료 후 별도 작업으로 진행한다
