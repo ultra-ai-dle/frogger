@@ -63,8 +63,9 @@ describe("sanitizeRawTrace", () => {
     step: 1,
     line: 1,
     vars,
-    scope: "global",
+    scope: { func: "global", depth: 0 },
     parent_frames: [],
+    runtimeError: null,
   });
 
   it("sanitizeRawTrace는 노이즈 변수를 trace에서 제거한다", () => {
@@ -205,8 +206,9 @@ describe("sanitizeRawTraceWithAllowlist", () => {
     step: 1,
     line: 1,
     vars,
-    scope: "global",
+    scope: { func: "global", depth: 0 },
     parent_frames: [],
+    runtimeError: null,
   });
 
   it("sanitizeRawTraceWithAllowlist는 allowlist에 없는 변수를 제거한다", () => {
