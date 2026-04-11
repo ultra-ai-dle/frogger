@@ -400,54 +400,58 @@ async function fetchErrorExplanation(
 
 ---
 
-## 4. 프롬프트 토큰 최적화 — /api/analyze
+## 4. 프롬프트 토큰 최적화 — /api/analyze (미채택)
 
-### 현재 구현 상태
+### 검토 배경
 
 `/api/analyze`는 매 호출마다 60+ 줄의 분류 규칙 프롬프트 전체를 전송한다. 코드가 100줄이라면 입력 토큰은 분류 규칙(~500토큰) + 코드(~200토큰) + varTypes(~100토큰) = **약 800토큰**.
 
-### 기술 설계
+두 가지 방향을 검토했으나, 둘 다 미채택한다.
 
-#### (a) systemInstruction 분리 (Gemini 한정, 즉시 적용 가능)
+### (a) systemInstruction 분리 — 미채택
 
-Gemini API는 `systemInstruction`을 별도 필드로 분리할 수 있다. 일부 Gemini 버전에서 `systemInstruction`은 캐시되어 재사용되므로 반복 호출 비용이 줄어든다.
+Gemini API는 `systemInstruction`을 별도 필드로 분리할 수 있다. 일부 Gemini 버전에서 캐시되어 반복 호출 비용이 줄어든다는 아이디어였으나, 실제로는 효과가 없다.
 
-```typescript
-// app/api/analyze/route.ts — callGemini 호출 시
+**이유: `generateContent` 엔드포인트는 Context Caching을 지원하지 않는다.**
 
-body: JSON.stringify({
-  system_instruction: {   // 분류 규칙 (고정 부분)
-    parts: [{ text: CLASSIFICATION_RULES_PROMPT }]
-  },
-  contents: [{            // 변하는 부분만 user turn에
-    role: "user",
-    parts: [{ text: buildUserPrompt(code, varTypes, language) }]
-  }],
-  ...
-})
+`systemInstruction` 캐싱은 Gemini 1.5 Pro의 **Context Caching API** 기능이며, 현재 `callGemini()`가 사용하는 기본 `generateContent` 엔드포인트에는 자동 캐싱이 없다. systemInstruction을 분리해도 매 호출마다 프롬프트 규칙 전체가 그대로 토큰으로 청구된다.
+
+또한 `callWithFallback` 인터페이스는 단일 `prompt: string`을 받는다. systemInstruction 분리는 이를 `{ system: string, user: string }` 형태로 바꾸거나 Gemini 전용 코드 경로를 추가해야 하는데, OpenAI/Groq/Anthropic도 각자의 방식으로 system role을 처리하게 된다. **리팩터링 비용만 발생하고 실질 절감은 없다.**
+
+### (b) 실행 라인 기반 코드 필터링 — 미채택
+
+트레이스에서 실제로 실행된 라인 번호만 추출해 코드를 필터링하여 전송하는 아이디어였다. 코드 토큰 20~40% 절감이 예상됐으나, 세 가지 구조적 문제로 미채택한다.
+
+**문제 1: post-processing 함수들이 전체 코드에 의존한다 (치명적)**
+
+`enrichSpecialVarKinds()`, `detectDequeVars()`, `detectArrayVars()`, `detectDirectionMapVars()`, `applyGraphModeInference()` 모두 원본 `code`를 받아 regex로 패턴을 스캔한다. 이 함수들은 AI 응답과 무관하게 전체 코드를 본다. 즉, AI에게 필터링된 코드를 보내도 post-processing은 여전히 원본 코드로 동작한다. 결과적으로 **AI 응답 품질만 저하**되고, AI가 잘못 판단한 strategy나 var_mapping을 post-processing이 보정하지 못하는 상황이 발생한다.
+
+**문제 2: 미실행 분기가 알고리즘 분류에 필수인 경우가 있다**
+
+```python
+def solve():
+    if condition:
+        dfs(start, set())   # 이 실행에서 trace에 있음
+    else:
+        bfs(start)          # trace에 없음 → AI는 BFS 존재를 모름
 ```
 
-#### (b) 코드 길이 상한 적용
+실행된 분기만 보내면 AI는 BFS/DFS 중 하나만 존재한다고 판단한다. `strategy`, `tags`, `detected_algorithms`가 모두 부정확해진다.
 
-트레이스에서 실제로 실행된 라인만 추출하여 전송한다:
+**문제 3: 함수 정의 줄이 trace에 없는 경우가 많다**
 
-```typescript
-function extractExecutedLines(code: string, trace: RawTraceStep[]): string {
-  const executedLineNos = new Set(trace.map((s) => s.line));
-  return code
-    .split("\n")
-    .map((line, i) => (executedLineNos.has(i + 1) ? line : null))
-    .filter(Boolean)
-    .join("\n");
-}
-```
+Python/JavaScript tracer는 함수 **호출** 시점은 기록하지만 `def`/`function` **선언 줄** 자체는 실행 라인으로 기록하지 않는 경우가 많다. 필터링하면 AI가 함수명과 시그니처를 보지 못해 알고리즘 분류 정확도가 떨어진다.
 
-실행되지 않은 주석, 미사용 함수 등을 제외하면 코드 토큰이 20~40% 절감된다.
+### 현재 상태로 충분한 이유
 
-### 예상 기대 효과
+`compactCodeForAnalyze()` (3200자 상한, head/tail 방식)가 이미 코드 토큰 상한을 처리하고 있고, localStorage LRU 캐시(섹션 1)로 반복 호출 자체가 대폭 줄었다. 추가 최적화의 실질적 기대 이득이 없다.
 
-- Gemini systemInstruction 분리: 반복 호출 시 ~30% 입력 토큰 절감 (캐시 지원 시)
-- 실행 라인 필터링: 코드 부분 ~20~40% 절감
+### 결론
+
+| 제안                       | 실제 토큰 절감         | 분석 품질 위험                                      | 구현 비용 | 결정       |
+| -------------------------- | ---------------------- | --------------------------------------------------- | --------- | ---------- |
+| (a) systemInstruction 분리 | **없음** (캐싱 미지원) | 없음                                                | 중간      | **미채택** |
+| (b) 실행 라인 필터링       | 20~40%                 | **높음** (post-processing 의존성, 미실행 분기 누락) | 낮음      | **미채택** |
 
 ---
 
@@ -468,7 +472,7 @@ Phase 2 (전체 explain 활성화 결정 시 함께 검토)
 ├── 중요 스텝 선별 전송                   → 전체 explain 토큰 절감 (현재 미채택)
 └── 청크 크기 동적 조정                   → explain API 호출 횟수 절감 (현재 미채택)
 
-Phase 3 (아키텍처 변경 수반)
-├── Gemini systemInstruction 분리          → analyze 반복 호출 비용 절감
-└── 실행 라인 기반 코드 필터링             → 입력 토큰 20~40% 절감
+Phase 3 (미채택)
+├── Gemini systemInstruction 분리          → generateContent 캐싱 미지원, 실효 없음
+└── 실행 라인 기반 코드 필터링             → post-processing 의존성·미실행 분기 문제
 ```
