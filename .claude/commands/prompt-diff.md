@@ -1,7 +1,7 @@
 # /prompt-diff — AI 프롬프트 변경 회귀 테스트
 
 ## 목적
-`/api/analyze` 또는 `/api/explain`의 시스템 프롬프트를 수정한 후, 고정 fixture에 대한 AI 출력이 계약 조건을 여전히 만족하는지 검증한다.
+`/api/analyze/route.ts` 또는 `/api/explain/route.ts` 내 인라인 프롬프트 문자열을 수정한 후, 계약 조건이 여전히 만족되는지 정적으로 검증한다.
 
 ## 입력
 - `$ARGUMENTS` — (선택) 대상 엔드포인트 지정 (`analyze`, `explain`). 미지정 시 둘 다 검사.
@@ -9,7 +9,7 @@
 ## 실행 절차
 
 1. **프롬프트 변경 감지**:
-   - `git diff`로 `/api/analyze/route.ts`, `/api/explain/route.ts` 내 프롬프트 문자열 변경을 확인한다.
+   - `git diff`로 `/api/analyze/route.ts`, `/api/explain/route.ts` 내 인라인 프롬프트 변경을 확인한다.
    - 변경이 없으면 "프롬프트 변경 없음 — 스킵" 으로 종료한다.
 
 2. **계약 조건 정적 검증** (프롬프트 텍스트 분석):
