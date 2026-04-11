@@ -11,25 +11,61 @@ import { normalizeAndDedupeTags } from "@/lib/tagNormalize";
 
 /* ── SVG Icons ─────────────────────────────────────────── */
 const IconFiles = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
     <polyline points="13 2 13 9 20 9" />
   </svg>
 );
 const IconSettings = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <circle cx="12" cy="12" r="3" />
     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
   </svg>
 );
 const IconRefresh = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    width="13"
+    height="13"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <polyline points="23 4 23 10 17 10" />
     <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
   </svg>
 );
 const IconExpand = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    width="13"
+    height="13"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <polyline points="15 3 21 3 21 9" />
     <polyline points="9 21 3 21 3 15" />
     <line x1="21" y1="3" x2="14" y2="10" />
@@ -37,23 +73,50 @@ const IconExpand = () => (
   </svg>
 );
 const IconWarning = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
     <line x1="12" y1="9" x2="12" y2="13" />
     <line x1="12" y1="17" x2="12.01" y2="17" />
   </svg>
 );
 const IconPencil = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <path d="M12 20h9" />
     <path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
   </svg>
 );
 /* ── Helpers ─────────────────────────────────────────────── */
-function runButtonLabel(status: string, hasTrace: boolean, isCodeEmpty: boolean, isStdinEmpty: boolean, language = "python") {
+function runButtonLabel(
+  status: string,
+  hasTrace: boolean,
+  isCodeEmpty: boolean,
+  isStdinEmpty: boolean,
+  language = "python",
+) {
   if (isCodeEmpty) return "코드를 입력하세요";
   if (isStdinEmpty) return "예시 입력을 입력하세요";
-  if (status === "loading") return language === "javascript" ? "JS 환경 준비 중..." : "Python 준비 중...";
+  if (status === "loading")
+    return language === "javascript"
+      ? "JS 환경 준비 중..."
+      : "Python 준비 중...";
   if (status === "running") return "디버깅 중...";
   if (status === "reinitializing") return "초기화 중...";
   if (status === "error") return "디버깅 불가";
@@ -61,28 +124,182 @@ function runButtonLabel(status: string, hasTrace: boolean, isCodeEmpty: boolean,
 }
 
 const PY_KEYWORDS = new Set([
-  "False", "None", "True", "and", "as", "assert", "async", "await", "break",
-  "class", "continue", "def", "del", "elif", "else", "except", "finally",
-  "for", "from", "global", "if", "import", "in", "is", "lambda", "nonlocal",
-  "not", "or", "pass", "raise", "return", "try", "while", "with", "yield"
+  "False",
+  "None",
+  "True",
+  "and",
+  "as",
+  "assert",
+  "async",
+  "await",
+  "break",
+  "class",
+  "continue",
+  "def",
+  "del",
+  "elif",
+  "else",
+  "except",
+  "finally",
+  "for",
+  "from",
+  "global",
+  "if",
+  "import",
+  "in",
+  "is",
+  "lambda",
+  "nonlocal",
+  "not",
+  "or",
+  "pass",
+  "raise",
+  "return",
+  "try",
+  "while",
+  "with",
+  "yield",
 ]);
 
 const JS_KEYWORDS = new Set([
-  "break", "case", "catch", "class", "const", "continue", "debugger", "default",
-  "delete", "do", "else", "export", "extends", "finally", "for", "function", "if",
-  "import", "in", "instanceof", "let", "new", "of", "return", "static", "super",
-  "switch", "this", "throw", "try", "typeof", "var", "void", "while", "with", "yield",
-  "true", "false", "null", "undefined", "async", "await"
+  "break",
+  "case",
+  "catch",
+  "class",
+  "const",
+  "continue",
+  "debugger",
+  "default",
+  "delete",
+  "do",
+  "else",
+  "export",
+  "extends",
+  "finally",
+  "for",
+  "function",
+  "if",
+  "import",
+  "in",
+  "instanceof",
+  "let",
+  "new",
+  "of",
+  "return",
+  "static",
+  "super",
+  "switch",
+  "this",
+  "throw",
+  "try",
+  "typeof",
+  "var",
+  "void",
+  "while",
+  "with",
+  "yield",
+  "true",
+  "false",
+  "null",
+  "undefined",
+  "async",
+  "await",
 ]);
 
-function highlightJsLine(line: string): Array<{ text: string; className: string }> {
+const PYTHON_LANGUAGE_HINTS = [
+  "def",
+  "elif",
+  "except",
+  "nonlocal",
+  "lambda",
+  "None",
+  "True",
+  "False",
+  "yield",
+  "with",
+  "import",
+  "from",
+  "pass",
+  "raise",
+];
+
+const JAVASCRIPT_LANGUAGE_HINTS = [
+  "function",
+  "const",
+  "let",
+  "var",
+  "console",
+  "undefined",
+  "null",
+  "new",
+  "class",
+  "extends",
+  "this",
+  "return",
+  "async",
+  "await",
+];
+
+function detectLanguageFromCode(
+  code: string,
+  fallback: "python" | "javascript" = "python",
+): "python" | "javascript" {
+  const compact = code.trim();
+  if (!compact) return fallback;
+
+  let pyScore = 0;
+  let jsScore = 0;
+
+  const lines = compact.split("\n");
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line) continue;
+    const pyLine = line.replace(/#.*/, "");
+    const jsLine = line.replace(/\/\/.*/, "");
+
+    if (/^\s*(def|class)\s+[A-Za-z_][A-Za-z0-9_]*\s*\(/.test(pyLine))
+      pyScore += 4;
+    if (
+      /:\s*$/.test(pyLine) &&
+      /^(if|elif|else|for|while|def|class|try|except|with)\b/.test(pyLine)
+    )
+      pyScore += 2;
+    if (/\bprint\s*\(/.test(pyLine)) pyScore += 1;
+
+    if (/\b(?:const|let|var)\s+[A-Za-z_$][A-Za-z0-9_$]*/.test(jsLine))
+      jsScore += 3;
+    if (/\bfunction\b|\=\>\s*/.test(jsLine)) jsScore += 3;
+    if (/\bconsole\.log\s*\(/.test(jsLine)) jsScore += 2;
+    if (/[{};]|===|!==/.test(jsLine)) jsScore += 1;
+  }
+
+  const wordPattern = /\b[A-Za-z_][A-Za-z0-9_]*\b/g;
+  const words = compact.match(wordPattern) ?? [];
+  for (const w of words) {
+    if (PY_KEYWORDS.has(w) || PYTHON_LANGUAGE_HINTS.includes(w)) pyScore += 1;
+    if (JS_KEYWORDS.has(w) || JAVASCRIPT_LANGUAGE_HINTS.includes(w))
+      jsScore += 1;
+  }
+
+  if (jsScore > pyScore + 1) return "javascript";
+  if (pyScore > jsScore + 1) return "python";
+  return fallback;
+}
+
+function highlightJsLine(
+  line: string,
+): Array<{ text: string; className: string }> {
   const tokens: Array<{ text: string; className: string }> = [];
-  const pattern = /(\/\/.*$|`(?:\\.|[^`\\])*`|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\b[A-Za-z_$][A-Za-z0-9_$]*\b|\b\d+(?:\.\d+)?\b)/g;
+  const pattern =
+    /(\/\/.*$|`(?:\\.|[^`\\])*`|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\b[A-Za-z_$][A-Za-z0-9_$]*\b|\b\d+(?:\.\d+)?\b)/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null = pattern.exec(line);
   while (match) {
     if (match.index > lastIndex) {
-      tokens.push({ text: line.slice(lastIndex, match.index), className: "text-[#c9d1d9]" });
+      tokens.push({
+        text: line.slice(lastIndex, match.index),
+        className: "text-[#c9d1d9]",
+      });
     }
     const token = match[0];
     if (token.startsWith("//")) {
@@ -108,21 +325,27 @@ function highlightJsLine(line: string): Array<{ text: string; className: string 
   return tokens;
 }
 
-function highlightPythonLine(line: string): Array<{ text: string; className: string }> {
+function highlightPythonLine(
+  line: string,
+): Array<{ text: string; className: string }> {
   const tokens: Array<{ text: string; className: string }> = [];
-  const pattern = /(#.*$|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\b[A-Za-z_][A-Za-z0-9_]*\b|\b\d+(?:\.\d+)?\b)/g;
+  const pattern =
+    /(#.*$|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\b[A-Za-z_][A-Za-z0-9_]*\b|\b\d+(?:\.\d+)?\b)/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null = pattern.exec(line);
 
   while (match) {
     if (match.index > lastIndex) {
-      tokens.push({ text: line.slice(lastIndex, match.index), className: "text-[#c9d1d9]" });
+      tokens.push({
+        text: line.slice(lastIndex, match.index),
+        className: "text-[#c9d1d9]",
+      });
     }
     const token = match[0];
 
     if (token.startsWith("#")) {
       tokens.push({ text: token, className: "text-[#8b949e] italic" });
-    } else if (token.startsWith("\"") || token.startsWith("'")) {
+    } else if (token.startsWith('"') || token.startsWith("'")) {
       tokens.push({ text: token, className: "text-[#a5d6ff]" });
     } else if (/^\d/.test(token)) {
       tokens.push({ text: token, className: "text-[#79c0ff]" });
@@ -152,6 +375,7 @@ function lineFromOffset(text: string, offset: number) {
 
 const LAST_EXECUTED_CODE_KEY = "prova:lastExecutedCode";
 const LAST_EXECUTED_STDIN_KEY = "prova:lastExecutedStdin";
+const LAST_SELECTED_LANGUAGE_KEY = "prova:lastSelectedLanguage";
 const BLOCKED_RUNTIME_VAR_NAMES = new Set([
   "modules",
   "version",
@@ -180,44 +404,74 @@ const BLOCKED_RUNTIME_VAR_NAMES = new Set([
   "base_prefix",
   "exec_prefix",
   "base_exec_prefix",
-  "pycache_prefix"
+  "pycache_prefix",
 ]);
 
 function isRuntimeNoiseVar(name: string, value: unknown, language = "python") {
   const key = name.trim();
   if (key.startsWith("__")) return true;
   if (language === "javascript") {
-    if (["console", "readline", "arguments"].includes(key)) return true;
+    if (["console", "readline", "arguments", "fs"].includes(key)) return true;
     return false;
   }
   // Python 전용 필터
   if (BLOCKED_RUNTIME_VAR_NAMES.has(key)) return true;
-  if (/(^_|import|frozen|zipimport|built-?in|site-packages|python3)/i.test(key)) return true;
+  if (/(^_|import|frozen|zipimport|built-?in|site-packages|python3)/i.test(key))
+    return true;
   const text = typeof value === "string" ? value : JSON.stringify(value);
-  if (typeof text === "string" && /<module '|zipimporter|_frozen_importlib|built-in\)|site-packages/i.test(text)) {
+  if (
+    typeof text === "string" &&
+    /<module '|zipimporter|_frozen_importlib|built-in\)|site-packages/i.test(
+      text,
+    )
+  ) {
     return true;
   }
   return false;
 }
 
-function sanitizeRawTrace(rawTrace: RawTraceStep[], language = "python"): RawTraceStep[] {
+function sanitizeRawTrace(
+  rawTrace: RawTraceStep[],
+  language = "python",
+): RawTraceStep[] {
   return rawTrace.map((step) => {
     const vars = Object.fromEntries(
-      Object.entries(step.vars || {}).filter(([name, value]) => !isRuntimeNoiseVar(name, value, language))
+      Object.entries(step.vars || {}).filter(
+        ([name, value]) => !isRuntimeNoiseVar(name, value, language),
+      ),
     );
     return { ...step, vars };
   });
 }
 
-function sanitizeVarTypes(varTypes: Record<string, string>, language = "python") {
+function sanitizeVarTypes(
+  varTypes: Record<string, string>,
+  language = "python",
+) {
   return Object.fromEntries(
-    Object.entries(varTypes || {}).filter(([name]) => !isRuntimeNoiseVar(name, "", language))
+    Object.entries(varTypes || {}).filter(
+      ([name]) => !isRuntimeNoiseVar(name, "", language),
+    ),
   );
 }
 
 function collectUserDeclaredSymbols(code: string, language = "python") {
   const allowed = new Set<string>([
-    "i", "j", "k", "r", "c", "x", "y", "z", "nx", "ny", "nr", "nc", "lj", "rj", "nk"
+    "i",
+    "j",
+    "k",
+    "r",
+    "c",
+    "x",
+    "y",
+    "z",
+    "nx",
+    "ny",
+    "nr",
+    "nc",
+    "lj",
+    "rj",
+    "nk",
   ]);
   const lines = code.split("\n");
   const add = (name: string) => {
@@ -228,34 +482,63 @@ function collectUserDeclaredSymbols(code: string, language = "python") {
     allowed.add(key);
   };
   const addMultiTargets = (segment: string) => {
-    segment.split(",").forEach((part) => add(part.replace(/[\(\)\[\]\{\}\s]/g, "")));
+    segment
+      .split(",")
+      .forEach((part) => add(part.replace(/[\(\)\[\]\{\}\s]/g, "")));
   };
 
   for (const raw of lines) {
     // 언어별 주석 제거
-    const line = (language === "javascript" ? raw.replace(/\/\/.*/, "") : raw.replace(/#.*/, "")).trim();
+    const line = (
+      language === "javascript"
+        ? raw.replace(/\/\/.*/, "")
+        : raw.replace(/#.*/, "")
+    ).trim();
     if (!line) continue;
 
     if (language === "javascript") {
       // const/let/var 선언
-      const jsDecl = line.match(/^(?:const|let|var)\s+([A-Za-z_$][A-Za-z0-9_$]*)/);
+      const jsDecl = line.match(
+        /^(?:const|let|var)\s+([A-Za-z_$][A-Za-z0-9_$]*)/,
+      );
       if (jsDecl) add(jsDecl[1]);
 
       // function 선언 + 파라미터
-      const jsFn = line.match(/^(?:async\s+)?function\s+([A-Za-z_$][A-Za-z0-9_$]*)\s*\(([^)]*)\)/);
+      const jsFn = line.match(
+        /^(?:async\s+)?function\s+([A-Za-z_$][A-Za-z0-9_$]*)\s*\(([^)]*)\)/,
+      );
       if (jsFn) {
         add(jsFn[1]);
-        jsFn[2].split(",").forEach((arg) => add(arg.replace(/[=\s].*/, "").replace(/^\.\.\./, "").trim()));
+        jsFn[2].split(",").forEach((arg) =>
+          add(
+            arg
+              .replace(/[=\s].*/, "")
+              .replace(/^\.\.\./, "")
+              .trim(),
+          ),
+        );
       }
 
       // for 루프 변수: for (let x = ...) / for (const x of ...)
-      const jsFor = line.match(/^for\s*\(\s*(?:const|let|var)\s+([A-Za-z_$][A-Za-z0-9_$]*)/);
+      const jsFor = line.match(
+        /^for\s*\(\s*(?:const|let|var)\s+([A-Za-z_$][A-Za-z0-9_$]*)/,
+      );
       if (jsFor) add(jsFor[1]);
 
       // 일반 대입 (const/let/var 제거 후)
       const assignIdx = line.indexOf("=");
-      if (assignIdx > 0 && !line.includes("==") && !line.includes(">=") && !line.includes("<=") && !line.includes("!=") && !line.includes("=>")) {
-        const left = line.slice(0, assignIdx).trim().replace(/^(?:const|let|var)\s+/, "");
+      if (
+        assignIdx > 0 &&
+        !line.includes("==") &&
+        !line.includes(">=") &&
+        !line.includes("<=") &&
+        !line.includes("!=") &&
+        !line.includes("=>")
+      ) {
+        const left = line
+          .slice(0, assignIdx)
+          .trim()
+          .replace(/^(?:const|let|var)\s+/, "");
         if (left && !/[.([\s]/.test(left)) add(left);
       }
     } else {
@@ -292,7 +575,13 @@ function collectUserDeclaredSymbols(code: string, language = "python") {
       const withAs = line.match(/^with\s+.+\s+as\s+([A-Za-z_][A-Za-z0-9_]*)/);
       if (withAs) add(withAs[1]);
       const assignIdx = line.indexOf("=");
-      if (assignIdx > 0 && !line.includes("==") && !line.includes(">=") && !line.includes("<=") && !line.includes("!=")) {
+      if (
+        assignIdx > 0 &&
+        !line.includes("==") &&
+        !line.includes(">=") &&
+        !line.includes("<=") &&
+        !line.includes("!=")
+      ) {
         const left = line.slice(0, assignIdx).trim();
         if (left) addMultiTargets(left);
       }
@@ -301,18 +590,31 @@ function collectUserDeclaredSymbols(code: string, language = "python") {
   return allowed;
 }
 
-function sanitizeRawTraceWithAllowlist(rawTrace: RawTraceStep[], allowed: Set<string>, language = "python"): RawTraceStep[] {
+function sanitizeRawTraceWithAllowlist(
+  rawTrace: RawTraceStep[],
+  allowed: Set<string>,
+  language = "python",
+): RawTraceStep[] {
   return rawTrace.map((step) => {
     const vars = Object.fromEntries(
-      Object.entries(step.vars || {}).filter(([name, value]) => allowed.has(name) && !isRuntimeNoiseVar(name, value, language))
+      Object.entries(step.vars || {}).filter(
+        ([name, value]) =>
+          allowed.has(name) && !isRuntimeNoiseVar(name, value, language),
+      ),
     );
     return { ...step, vars };
   });
 }
 
-function sanitizeVarTypesWithAllowlist(varTypes: Record<string, string>, allowed: Set<string>, language = "python") {
+function sanitizeVarTypesWithAllowlist(
+  varTypes: Record<string, string>,
+  allowed: Set<string>,
+  language = "python",
+) {
   return Object.fromEntries(
-    Object.entries(varTypes || {}).filter(([name]) => allowed.has(name) && !isRuntimeNoiseVar(name, "", language))
+    Object.entries(varTypes || {}).filter(
+      ([name]) => allowed.has(name) && !isRuntimeNoiseVar(name, "", language),
+    ),
   );
 }
 
@@ -322,24 +624,39 @@ function isRenderableValue(value: unknown) {
 
 function stableStringifyObject(obj: Record<string, string>) {
   return JSON.stringify(
-    Object.fromEntries(Object.entries(obj).sort(([a], [b]) => a.localeCompare(b)))
+    Object.fromEntries(
+      Object.entries(obj).sort(([a], [b]) => a.localeCompare(b)),
+    ),
   );
 }
 
 function maxNumericAbs(value: unknown): number {
-  if (typeof value === "number" && Number.isFinite(value)) return Math.abs(value);
-  if (Array.isArray(value)) return value.reduce((m, v) => Math.max(m, maxNumericAbs(v)), 0);
+  if (typeof value === "number" && Number.isFinite(value))
+    return Math.abs(value);
+  if (Array.isArray(value))
+    return value.reduce((m, v) => Math.max(m, maxNumericAbs(v)), 0);
   if (value && typeof value === "object") {
     return Object.values(value as Record<string, unknown>).reduce<number>(
       (m, v) => Math.max(m, maxNumericAbs(v)),
-      0
+      0,
     );
   }
   return 0;
 }
 
-function formatWithBitMode(value: unknown, bitmaskMode: boolean, bitWidth: number): string {
-  if (!(bitmaskMode && typeof value === "number" && Number.isInteger(value) && value >= 0)) {
+function formatWithBitMode(
+  value: unknown,
+  bitmaskMode: boolean,
+  bitWidth: number,
+): string {
+  if (
+    !(
+      bitmaskMode &&
+      typeof value === "number" &&
+      Number.isInteger(value) &&
+      value >= 0
+    )
+  ) {
     return JSON.stringify(value);
   }
   const bin = value.toString(2).padStart(Math.max(1, bitWidth), "0");
@@ -350,20 +667,39 @@ export default function Page() {
   const [code, setCode] = useState("");
   const [tabSize, setTabSize] = useState<2 | 4>(4);
   const [language, setLanguage] = useState("python");
-  const [toasts, setToasts] = useState<Array<{ id: number; kind: "warn" | "ok"; message: string }>>([]);
+  const [toasts, setToasts] = useState<
+    Array<{ id: number; kind: "warn" | "ok"; message: string }>
+  >([]);
+  const [copied, setCopied] = useState(false);
+  const [wordWrap, setWordWrap] = useState(false);
   const runtimeRef = useRef<ProvaRuntime | null>(null);
   const analyzeCacheRef = useRef<Map<string, AnalyzeMetadata>>(new Map());
-  const analyzeInFlightRef = useRef<Map<string, Promise<AnalyzeMetadata>>>(new Map());
+  const analyzeInFlightRef = useRef<Map<string, Promise<AnalyzeMetadata>>>(
+    new Map(),
+  );
   const playTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const editorRef = useRef<HTMLTextAreaElement | null>(null);
   const editorHighlightRef = useRef<HTMLDivElement | null>(null);
   const codeRef = useRef(code);
   const splitRootRef = useRef<HTMLDivElement | null>(null);
   const rightPaneRef = useRef<HTMLDivElement | null>(null);
-  const dragTypeRef = useRef<"left" | "right" | "var-input" | "input-output" | null>(null);
-  const dragAnchorRef = useRef<{ leftCenterTotal: number; leftWidth: number } | null>(null);
-  const [paneWidths, setPaneWidths] = useState({ left: 34, center: 38, right: 28 });
-  const [rightHeights, setRightHeights] = useState({ variable: 42, input: 30, output: 28 });
+  const dragTypeRef = useRef<
+    "left" | "right" | "var-input" | "input-output" | null
+  >(null);
+  const dragAnchorRef = useRef<{
+    leftCenterTotal: number;
+    leftWidth: number;
+  } | null>(null);
+  const [paneWidths, setPaneWidths] = useState({
+    left: 34,
+    center: 38,
+    right: 28,
+  });
+  const [rightHeights, setRightHeights] = useState({
+    variable: 42,
+    input: 30,
+    output: 28,
+  });
   const [editCursorLine, setEditCursorLine] = useState(1);
   const [bitmaskMode, setBitmaskMode] = useState(false);
 
@@ -385,7 +721,7 @@ export default function Page() {
     setCurrentStep,
     setPlaying,
     setSpeed,
-    resetForRun
+    resetForRun,
   } = useProvaStore();
 
   const currentStep = mergedTrace[playback.currentStep] ?? null;
@@ -395,16 +731,24 @@ export default function Page() {
   const isError = uiMode === "errorStep";
   const isVisualizing = uiMode === "visualizing" || isError || isFallback;
   const isDebugMode = uiMode !== "ready";
+  const normalizedLanguage: "python" | "javascript" =
+    language === "javascript" ? "javascript" : "python";
+  const inferredLanguage = useMemo(
+    () => detectLanguageFromCode(code, normalizedLanguage),
+    [code, normalizedLanguage],
+  );
   const isCodeEmpty = code.trim().length === 0;
-  const isStdinEmpty = language !== "javascript" && stdin.trim().length === 0;
-  const isAnalyzingCode = pyodideStatus === "running" && !metadata && rawTrace.length > 0;
+  const isStdinEmpty =
+    inferredLanguage !== "javascript" && stdin.trim().length === 0;
+  const isAnalyzingCode =
+    pyodideStatus === "running" && !metadata && rawTrace.length > 0;
   const displayTags = useMemo(
     () => normalizeAndDedupeTags(metadata?.tags ?? [], 20),
-    [metadata?.tags]
+    [metadata?.tags],
   );
   const graphDisplayMode = useMemo(
     () => resolveGraphMode(metadata, code),
-    [metadata, code]
+    [metadata, code],
   );
   const linearArrayVarName = useMemo(() => {
     const m = metadata?.var_mapping;
@@ -418,20 +762,26 @@ export default function Page() {
   const effectiveStrategy = useMemo(() => {
     if (!metadata) return undefined;
     const tags = displayTags.length > 0 ? displayTags : (metadata.tags ?? []);
-    const hasGraphTag = tags.some((tag) => /그래프|graph|dfs|bfs|dijkstra|prim|kruskal|인접/i.test(tag));
-    const hasGridTag = tags.some((tag) => /grid|2d|행렬|격자|matrix/i.test(tag));
-    if (hasGraphTag) return "GRAPH" as const;
+    const hasGraphTag = tags.some((tag) =>
+      /그래프|graph|dfs|bfs|dijkstra|prim|kruskal|인접/i.test(tag),
+    );
+    const hasGridTag = tags.some((tag) =>
+      /grid|2d|행렬|격자|matrix/i.test(tag),
+    );
+    // grid 신호가 함께 있으면 graph 태그보다 우선한다 (grid BFS/DFS 오분류 방지)
     if (hasGridTag) return "GRID" as const;
+    if (hasGraphTag) return "GRAPH" as const;
     return metadata.strategy;
   }, [metadata, displayTags]);
   const shouldUseGraphPanel = useMemo(() => {
     if (isAnalyzingCode || !currentStep) return false;
     if (effectiveStrategy === "GRAPH") return true;
-    const source = mergedTrace.length > 0
-      ? mergedTrace.filter((s) => s.step <= currentStep.step)
-      : [currentStep];
+    const source =
+      mergedTrace.length > 0
+        ? mergedTrace.filter((s) => s.step <= currentStep.step)
+        : [currentStep];
     return source.some((s) =>
-      Object.values(s.vars ?? {}).some((v) => isRenderableValue(v))
+      Object.values(s.vars ?? {}).some((v) => isRenderableValue(v)),
     );
   }, [currentStep, effectiveStrategy, isAnalyzingCode, mergedTrace]);
   const shouldShowBitToggle = useMemo(() => {
@@ -443,7 +793,7 @@ export default function Page() {
       ...(metadata.detected_data_structures ?? []),
       metadata.summary ?? "",
       metadata.display_name ?? "",
-      metadata.algorithm ?? ""
+      metadata.algorithm ?? "",
     ]
       .filter(Boolean)
       .join(" ")
@@ -452,12 +802,14 @@ export default function Page() {
   }, [metadata]);
   const bitWidth = useMemo(() => {
     if (!bitmaskMode) return 1;
-    const uptoCurrent = mergedTrace.filter((s) => s.step <= (currentStep?.step ?? 0));
+    const uptoCurrent = mergedTrace.filter(
+      (s) => s.step <= (currentStep?.step ?? 0),
+    );
     const source = uptoCurrent.length > 0 ? uptoCurrent : mergedTrace;
     const maxAbs = source.reduce((m, s) => {
       const localMax = Object.values(s.vars ?? {}).reduce<number>(
         (mm, v) => Math.max(mm, maxNumericAbs(v)),
-        0
+        0,
       );
       return Math.max(m, localMax);
     }, 0);
@@ -472,7 +824,11 @@ export default function Page() {
     const onMouseMove = (e: MouseEvent) => {
       if (!dragTypeRef.current || !splitRootRef.current) return;
 
-      if ((dragTypeRef.current === "var-input" || dragTypeRef.current === "input-output") && rightPaneRef.current) {
+      if (
+        (dragTypeRef.current === "var-input" ||
+          dragTypeRef.current === "input-output") &&
+        rightPaneRef.current
+      ) {
         const rect = rightPaneRef.current.getBoundingClientRect();
         const minPct = (140 / Math.max(rect.height, 1)) * 100;
         const yPct = ((e.clientY - rect.top) / Math.max(rect.height, 1)) * 100;
@@ -480,20 +836,26 @@ export default function Page() {
         setRightHeights((prev) => {
           if (dragTypeRef.current === "var-input") {
             const total = prev.variable + prev.input;
-            const nextVariable = Math.min(Math.max(yPct, minPct), total - minPct);
+            const nextVariable = Math.min(
+              Math.max(yPct, minPct),
+              total - minPct,
+            );
             return {
               ...prev,
               variable: nextVariable,
-              input: total - nextVariable
+              input: total - nextVariable,
             };
           }
           const total = prev.input + prev.output;
           const inputFromTop = yPct - prev.variable;
-          const nextInput = Math.min(Math.max(inputFromTop, minPct), total - minPct);
+          const nextInput = Math.min(
+            Math.max(inputFromTop, minPct),
+            total - minPct,
+          );
           return {
             ...prev,
             input: nextInput,
-            output: total - nextInput
+            output: total - nextInput,
           };
         });
         return;
@@ -505,23 +867,27 @@ export default function Page() {
 
       setPaneWidths((prev) => {
         if (dragTypeRef.current === "left") {
-          const total = dragAnchorRef.current?.leftCenterTotal ?? (prev.left + prev.center);
+          const total =
+            dragAnchorRef.current?.leftCenterTotal ?? prev.left + prev.center;
           const nextLeft = Math.min(Math.max(xPct, minPct), total - minPct);
           return {
             ...prev,
             left: nextLeft,
-            center: total - nextLeft
+            center: total - nextLeft,
           };
         }
         const leftWidth = dragAnchorRef.current?.leftWidth ?? prev.left;
         const total = 100 - leftWidth;
         const centerFromLeft = xPct - leftWidth;
-        const nextCenter = Math.min(Math.max(centerFromLeft, minPct), total - minPct);
+        const nextCenter = Math.min(
+          Math.max(centerFromLeft, minPct),
+          total - minPct,
+        );
         return {
           ...prev,
           left: leftWidth,
           center: nextCenter,
-          right: total - nextCenter
+          right: total - nextCenter,
         };
       });
     };
@@ -557,10 +923,48 @@ export default function Page() {
       if (savedStdin && savedStdin.trim().length > 0) {
         setStdin(savedStdin);
       }
+      const savedLanguage = localStorage.getItem(LAST_SELECTED_LANGUAGE_KEY);
+      if (savedLanguage === "python" || savedLanguage === "javascript") {
+        setLanguage(savedLanguage);
+      }
     } catch {
       // localStorage access can fail in strict/private environments.
     }
   }, [setStdin]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(LAST_SELECTED_LANGUAGE_KEY, language);
+    } catch {
+      // ignore storage failures
+    }
+  }, [language]);
+
+  useEffect(() => {
+    if (isRunning) return;
+    if (inferredLanguage === normalizedLanguage) return;
+    const timer = setTimeout(() => {
+      setLanguage(inferredLanguage);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [inferredLanguage, isRunning, normalizedLanguage]);
+
+  const detectIndentSize = (text: string): 2 | 4 | null => {
+    let gcd = 0;
+    for (const line of text.split("\n")) {
+      const m = line.match(/^( +)/);
+      if (!m) continue;
+      const n = m[1].length;
+      let a = gcd,
+        b = n;
+      while (b) {
+        [a, b] = [b, a % b];
+      }
+      gcd = a;
+    }
+    if (gcd === 0) return null;
+    return gcd <= 2 ? 2 : 4;
+  };
 
   const applyTabSizeToCode = (nextTabSize: 2 | 4) => {
     if (nextTabSize === tabSize) return;
@@ -607,129 +1011,173 @@ export default function Page() {
   const addToast = (kind: "warn" | "ok", message: string) => {
     const id = Date.now() + Math.random();
     setToasts((prev) => [{ id, kind, message }, ...prev].slice(0, 3));
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, kind === "ok" ? 4000 : 5000);
+    setTimeout(
+      () => {
+        setToasts((prev) => prev.filter((t) => t.id !== id));
+      },
+      kind === "ok" ? 4000 : 5000,
+    );
   };
 
   useEffect(() => {
     setUiMode("ready");
     setMetadata(null);
     setPyodideStatus("loading");
-    const runtime = new ProvaRuntime({
-      onReady: () => setPyodideStatus("ready"),
-      onDone: async (payload) => {
-        const allowlist = collectUserDeclaredSymbols(codeRef.current, language);
-        const sanitizedRawTrace = sanitizeRawTraceWithAllowlist(
-          sanitizeRawTrace(payload.rawTrace ?? [], language),
-          allowlist,
-          language
-        );
-        const sanitizedVarTypes = sanitizeVarTypesWithAllowlist(
-          sanitizeVarTypes(payload.varTypes ?? {}, language),
-          allowlist,
-          language
-        );
-        const sanitizedPayload = {
-          ...payload,
-          rawTrace: sanitizedRawTrace,
-          varTypes: sanitizedVarTypes,
-        };
-        setWorkerResult(sanitizedPayload);
-        try {
-          const analyzeKey = `${codeRef.current}\n@@\n${stableStringifyObject(sanitizedVarTypes)}\n@@\nmeta-v2-partition-pivot`;
-          const cachedMeta = analyzeCacheRef.current.get(analyzeKey);
-          let meta: AnalyzeMetadata;
-          if (cachedMeta) {
-            meta = cachedMeta;
-          } else {
-            const inFlight = analyzeInFlightRef.current.get(analyzeKey);
-            if (inFlight) {
-              meta = await inFlight;
+    const runtime = new ProvaRuntime(
+      {
+        onReady: () => setPyodideStatus("ready"),
+        onDone: async (payload) => {
+          const analyzeLanguage = detectLanguageFromCode(
+            codeRef.current,
+            language === "javascript" ? "javascript" : "python",
+          );
+          if (analyzeLanguage !== language) {
+            setLanguage(analyzeLanguage);
+          }
+          const allowlist = collectUserDeclaredSymbols(
+            codeRef.current,
+            analyzeLanguage,
+          );
+          const sanitizedRawTrace = sanitizeRawTraceWithAllowlist(
+            sanitizeRawTrace(payload.rawTrace ?? [], analyzeLanguage),
+            allowlist,
+            analyzeLanguage,
+          );
+          const sanitizedVarTypes = sanitizeVarTypesWithAllowlist(
+            sanitizeVarTypes(payload.varTypes ?? {}, analyzeLanguage),
+            allowlist,
+            analyzeLanguage,
+          );
+          const sanitizedPayload = {
+            ...payload,
+            rawTrace: sanitizedRawTrace,
+            varTypes: sanitizedVarTypes,
+          };
+          setWorkerResult(sanitizedPayload);
+          try {
+            const analyzeKey = `${analyzeLanguage}\n@@\n${codeRef.current}\n@@\n${stableStringifyObject(sanitizedVarTypes)}\n@@\nmeta-v2-partition-pivot`;
+            const cachedMeta = analyzeCacheRef.current.get(analyzeKey);
+            let meta: AnalyzeMetadata;
+            if (cachedMeta) {
+              meta = cachedMeta;
             } else {
-              const request = (async () => {
-                const analyze = await fetch("/api/analyze", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ code: codeRef.current, varTypes: sanitizedVarTypes, language })
-                });
-                if (!analyze.ok) {
-                  let detail = "";
-                  let serverMessage = "";
-                  try {
-                    const errJson = await analyze.json();
-                    serverMessage = String(errJson?.message ?? "");
-                    detail = String(errJson?.error ?? errJson?.message ?? "");
-                  } catch {
-                    detail = "";
+              const inFlight = analyzeInFlightRef.current.get(analyzeKey);
+              if (inFlight) {
+                meta = await inFlight;
+              } else {
+                const request = (async () => {
+                  const analyze = await fetch("/api/analyze", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      code: codeRef.current,
+                      varTypes: sanitizedVarTypes,
+                      language: analyzeLanguage,
+                    }),
+                  });
+                  if (!analyze.ok) {
+                    let detail = "";
+                    let serverMessage = "";
+                    try {
+                      const errJson = await analyze.json();
+                      serverMessage = String(errJson?.message ?? "");
+                      detail = String(errJson?.error ?? errJson?.message ?? "");
+                    } catch {
+                      detail = "";
+                    }
+                    throw new Error(
+                      `ANALYZE_HTTP_${analyze.status}${serverMessage ? `|${serverMessage}` : ""}${detail ? `:${detail}` : ""}`,
+                    );
                   }
-                  throw new Error(`ANALYZE_HTTP_${analyze.status}${serverMessage ? `|${serverMessage}` : ""}${detail ? `:${detail}` : ""}`);
+                  return (await analyze.json()) as AnalyzeMetadata;
+                })();
+                analyzeInFlightRef.current.set(analyzeKey, request);
+                try {
+                  meta = await request;
+                  analyzeCacheRef.current.set(analyzeKey, meta);
+                } finally {
+                  analyzeInFlightRef.current.delete(analyzeKey);
                 }
-                return (await analyze.json()) as AnalyzeMetadata;
-              })();
-              analyzeInFlightRef.current.set(analyzeKey, request);
-              try {
-                meta = await request;
-                analyzeCacheRef.current.set(analyzeKey, meta);
-              } finally {
-                analyzeInFlightRef.current.delete(analyzeKey);
               }
             }
-          }
-          setMetadata(meta);
-          const errorStepIndex = sanitizedRawTrace.findIndex((step) => step.runtimeError);
-          setUiMode(errorStepIndex >= 0 ? "errorStep" : "visualizing");
-          setCurrentStep(errorStepIndex >= 0 ? errorStepIndex : 0);
-          setPyodideStatus("ready");
-        } catch (error) {
-          const message = error instanceof Error ? error.message : String(error);
-          if (message.includes("_400")) {
+            setMetadata(meta);
+            const errorStepIndex = sanitizedRawTrace.findIndex(
+              (step) => step.runtimeError,
+            );
+            setUiMode(errorStepIndex >= 0 ? "errorStep" : "visualizing");
+            setCurrentStep(errorStepIndex >= 0 ? errorStepIndex : 0);
+            setPyodideStatus("ready");
+          } catch (error) {
+            const message =
+              error instanceof Error ? error.message : String(error);
+            if (message.includes("_400")) {
+              setUiMode("ready");
+              setPyodideStatus("ready");
+              const serverMessage = message.includes("|")
+                ? message.split("|")[1]?.split(":")[0]
+                : "";
+              addToast(
+                "warn",
+                serverMessage ||
+                  "요청이 올바르지 않습니다. 입력 코드/트레이스를 확인해 주세요.",
+              );
+              return;
+            }
             setUiMode("ready");
             setPyodideStatus("ready");
-            const serverMessage = message.includes("|")
-              ? message.split("|")[1]?.split(":")[0]
-              : "";
-            addToast("warn", serverMessage || "요청이 올바르지 않습니다. 입력 코드/트레이스를 확인해 주세요.");
-            return;
+            setGlobalError({
+              type: "NETWORK",
+              message: message.includes("ANALYZE_HTTP_429")
+                ? "AI 분석 요청 한도를 초과했습니다. 잠시 후 다시 시도해 주세요. (429)"
+                : message,
+            });
+            addToast(
+              "warn",
+              message.includes("ANALYZE_HTTP_429")
+                ? "AI 한도 초과(429)로 분석에 실패했습니다."
+                : "AI 분석에 실패했습니다. 오류 내용을 확인해 주세요.",
+            );
           }
-          setUiMode("ready");
-          setPyodideStatus("ready");
-          setGlobalError({
-            type: "NETWORK",
-            message: message.includes("ANALYZE_HTTP_429")
-              ? "AI 분석 요청 한도를 초과했습니다. 잠시 후 다시 시도해 주세요. (429)"
-              : message
-          });
+        },
+        onError: (error) => {
+          setPyodideStatus("error");
+          setGlobalError({ type: "RUNTIME", message: error.message });
+        },
+        onTimeout: () => {
+          setPyodideStatus("reinitializing");
           addToast(
             "warn",
-            message.includes("ANALYZE_HTTP_429")
-              ? "AI 한도 초과(429)로 분석에 실패했습니다."
-              : "AI 분석에 실패했습니다. 오류 내용을 확인해 주세요."
+            "실행 시간이 너무 길어 안전을 위해 중단하고 환경을 재설정합니다.",
           );
-        }
-      },
-      onError: (error) => {
-        setPyodideStatus("error");
-        setGlobalError({ type: "RUNTIME", message: error.message });
-      },
-      onTimeout: () => {
-        setPyodideStatus("reinitializing");
-        addToast("warn", "실행 시간이 너무 길어 안전을 위해 중단하고 환경을 재설정합니다.");
-        setTimeout(() => {
+          setTimeout(() => {
+            setPyodideStatus("ready");
+            addToast(
+              "ok",
+              "환경 준비 완료. 코드를 수정 후 다시 시도해 주세요.",
+            );
+          }, 900);
+        },
+        onInvalidInput: (message) => {
+          setUiMode("ready");
           setPyodideStatus("ready");
-          addToast("ok", "환경 준비 완료. 코드를 수정 후 다시 시도해 주세요.");
-        }, 900);
+          addToast("warn", message);
+        },
       },
-      onInvalidInput: (message) => {
-        setUiMode("ready");
-        setPyodideStatus("ready");
-        addToast("warn", message);
-      }
-    }, language);
+      language,
+    );
     runtime.init();
     runtimeRef.current = runtime;
     return () => runtime.destroy();
-  }, [language, setCurrentStep, setGlobalError, setMetadata, setPyodideStatus, setUiMode, setWorkerResult, stdin]);
+  }, [
+    language,
+    setCurrentStep,
+    setGlobalError,
+    setMetadata,
+    setPyodideStatus,
+    setUiMode,
+    setWorkerResult,
+    stdin,
+  ]);
 
   useEffect(() => {
     if (!playback.isPlaying) {
@@ -738,27 +1186,44 @@ export default function Page() {
       return;
     }
     if (playTimer.current) clearInterval(playTimer.current);
-    playTimer.current = setInterval(() => {
-      const next = playback.currentStep + 1;
-      if (next >= mergedTrace.length) {
-        setPlaying(false);
-        return;
-      }
-      if (mergedTrace[next]?.runtimeError) {
+    playTimer.current = setInterval(
+      () => {
+        const next = playback.currentStep + 1;
+        if (next >= mergedTrace.length) {
+          setPlaying(false);
+          return;
+        }
+        if (mergedTrace[next]?.runtimeError) {
+          setCurrentStep(next);
+          setPlaying(false);
+          setUiMode("errorStep");
+          return;
+        }
         setCurrentStep(next);
-        setPlaying(false);
-        setUiMode("errorStep");
-        return;
-      }
-      setCurrentStep(next);
-    }, Math.max(300, 900 / playback.playbackSpeed));
+      },
+      Math.max(300, 900 / playback.playbackSpeed),
+    );
     return () => {
       if (playTimer.current) clearInterval(playTimer.current);
     };
-  }, [mergedTrace, playback.currentStep, playback.isPlaying, playback.playbackSpeed, setCurrentStep, setPlaying, setUiMode]);
+  }, [
+    mergedTrace,
+    playback.currentStep,
+    playback.isPlaying,
+    playback.playbackSpeed,
+    setCurrentStep,
+    setPlaying,
+    setUiMode,
+  ]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement as HTMLElement | null;
+      const isThreeNavContext = !!activeEl?.closest?.(
+        "[data-prova-3d-nav='true']",
+      );
+      if (isThreeNavContext) return;
+
       const target = e.target as HTMLElement | null;
       const isTypingContext =
         !!target &&
@@ -778,38 +1243,68 @@ export default function Page() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [mergedTrace.length, playback.currentStep, playback.isPlaying, setCurrentStep, setPlaying]);
+  }, [
+    mergedTrace.length,
+    playback.currentStep,
+    playback.isPlaying,
+    setCurrentStep,
+    setPlaying,
+  ]);
 
   const headerBadge = useMemo(() => {
-    if (isRunning) return { text: "알고리즘 분석 중...", style: "border-[#e3b341]/40 bg-[#3d2b00]/60 text-[#e3b341]" };
-    if (isFallback) return { text: "○ 알고리즘 감지 실패", style: "border-prova-line text-prova-muted" };
-    if (metadata?.display_name) return { text: "", style: "border-prova-line text-prova-muted" };
-    return { text: "WAITING FOR EXECUTION...", style: "border-prova-line text-prova-muted" };
+    if (isRunning)
+      return {
+        text: "알고리즘 분석 중...",
+        style: "border-[#e3b341]/40 bg-[#3d2b00]/60 text-[#e3b341]",
+      };
+    if (isFallback)
+      return {
+        text: "○ 알고리즘 감지 실패",
+        style: "border-prova-line text-prova-muted",
+      };
+    if (metadata?.display_name)
+      return { text: "", style: "border-prova-line text-prova-muted" };
+    return {
+      text: "WAITING FOR EXECUTION...",
+      style: "border-prova-line text-prova-muted",
+    };
   }, [isFallback, isRunning, metadata?.display_name]);
 
   return (
     <div className="h-screen flex flex-col bg-prova-bg text-[#e6edf3] overflow-hidden">
       {/* ── Running progress bar ────────────────────────────── */}
-      <div className={`h-[2px] shrink-0 transition-opacity duration-300 ${isRunning ? "opacity-100 animate-pulse bg-gradient-to-r from-[#58a6ff] via-prova-green to-[#58a6ff]" : "opacity-0"}`} />
+      <div
+        className={`h-[2px] shrink-0 transition-opacity duration-300 ${isRunning ? "opacity-100 animate-pulse bg-gradient-to-r from-[#58a6ff] via-prova-green to-[#58a6ff]" : "opacity-0"}`}
+      />
 
       {/* ── Status banners ──────────────────────────────────── */}
-      {(pyodideStatus === "loading" || pyodideStatus === "error" || isFallback || !!globalError) && (
-        <div className={`shrink-0 h-9 flex items-center justify-between px-4 text-xs font-medium ${
-          pyodideStatus === "loading" ? "bg-[#3d2b00] text-[#e3b341]"
-          : pyodideStatus === "error" || globalError ? "bg-[#5a1212] text-[#ffc1c1]"
-          : "bg-[#7c4a00]/70 text-[#ffe09a]"
-        }`}>
+      {(pyodideStatus === "error" || isFallback || !!globalError) && (
+        <div
+          className={`shrink-0 h-9 flex items-center justify-between px-4 text-xs font-medium ${
+            pyodideStatus === "error" || globalError
+              ? "bg-[#5a1212] text-[#ffc1c1]"
+              : "bg-[#7c4a00]/70 text-[#ffe09a]"
+          }`}
+        >
           <div className="flex items-center gap-2">
             <IconWarning />
             <span>
-              {pyodideStatus === "loading" && (language === "javascript" ? "JS 환경 준비 중입니다. 잠시만 기다려 주세요." : "Python 환경 준비 중입니다. 잠시만 기다려 주세요.")}
-              {pyodideStatus === "error" && (language === "javascript" ? "JS 환경 초기화에 실패했습니다. 페이지를 새로고침해 주세요." : "Python 환경 초기화에 실패했습니다. 페이지를 새로고침해 주세요.")}
-              {isFallback && "AI 연결에 실패했습니다. 기본 변수 뷰로 코드 흐름을 추적합니다."}
-              {!isFallback && globalError && `AI 분석 실패: ${globalError.message}`}
+              {pyodideStatus === "error" &&
+                (language === "javascript"
+                  ? "JS 환경 초기화에 실패했습니다. 페이지를 새로고침해 주세요."
+                  : "Python 환경 초기화에 실패했습니다. 페이지를 새로고침해 주세요.")}
+              {isFallback &&
+                "AI 연결에 실패했습니다. 기본 변수 뷰로 코드 흐름을 추적합니다."}
+              {!isFallback &&
+                globalError &&
+                `AI 분석 실패: ${globalError.message}`}
             </span>
           </div>
           {pyodideStatus === "error" && (
-            <button className="border border-current rounded px-3 py-1 hover:bg-white/10 transition-colors" onClick={() => window.location.reload()}>
+            <button
+              className="border border-current rounded px-3 py-1 hover:bg-white/10 transition-colors"
+              onClick={() => window.location.reload()}
+            >
               새로고침
             </button>
           )}
@@ -826,7 +1321,9 @@ export default function Page() {
         {/* Status badge — centered */}
         <div className="flex-1 flex justify-center">
           {headerBadge.text ? (
-            <div className={`text-[11px] rounded-full border px-3 py-[3px] font-mono tracking-wide ${headerBadge.style}`}>
+            <div
+              className={`text-[11px] rounded-full border px-3 py-[3px] font-mono tracking-wide ${headerBadge.style}`}
+            >
               {headerBadge.text}
             </div>
           ) : null}
@@ -839,7 +1336,6 @@ export default function Page() {
         >
           <IconSettings />
         </button>
-
       </header>
 
       {/* ── Body ────────────────────────────────────────────── */}
@@ -847,37 +1343,35 @@ export default function Page() {
         {/* 3-column main area (resizable) */}
         <div ref={splitRootRef} className="flex-1 flex min-h-0 min-w-0">
           {/* ── Code Editor ───────────────────────────── */}
-          <section className="min-h-0 flex flex-col min-w-0" style={{ width: `${paneWidths.left}%` }}>
+          <section
+            className="min-h-0 flex flex-col min-w-0"
+            style={{ width: `${paneWidths.left}%` }}
+          >
             {/* Section header */}
-            <div className="shrink-0 h-9 flex items-center justify-between px-3 border-b border-prova-line bg-[#0f141a]">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] text-prova-muted uppercase tracking-widest font-medium">
-                  bfs_algorithm.py
+            <div
+              className={`shrink-0 h-9 flex items-center justify-between px-3 border-b transition-colors ${
+                isDebugMode
+                  ? "border-[#58a6ff]/25 bg-[#0d1520]"
+                  : "border-prova-line bg-[#0f141a]"
+              }`}
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-[10px] text-prova-muted uppercase tracking-widest font-medium truncate">
+                  {language === "javascript" ? "algorithm.js" : "algorithm.py"}
                 </span>
                 {isVisualizing && (
-                  <span className={`text-[10px] px-2 py-[2px] rounded-full border font-medium ${
-                    isError
-                      ? "border-prova-red/40 bg-[#2d1112]/60 text-prova-red"
-                      : "border-prova-green/40 bg-[#1a4731]/60 text-prova-green"
-                  }`}>
+                  <span
+                    className={`shrink-0 text-[10px] px-2 py-[2px] rounded-full border font-medium ${
+                      isError
+                        ? "border-prova-red/40 bg-[#2d1112]/60 text-prova-red"
+                        : "border-prova-green/40 bg-[#1a4731]/60 text-prova-green"
+                    }`}
+                  >
                     {isError ? "error" : "ready"}
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-3">
-                {isDebugMode && (
-                  <button
-                    className="h-7 w-7 rounded border border-prova-line bg-[#161b22] text-prova-muted grid place-items-center hover:text-[#c9d1d9] hover:border-[#58a6ff]/50 transition-colors"
-                    onClick={() => {
-                      setPlaying(false);
-                      setUiMode("ready");
-                    }}
-                    title="디버깅 모드를 해제하고 편집 상태로 돌아갑니다."
-                    aria-label="편집 모드로 전환"
-                  >
-                    <IconPencil />
-                  </button>
-                )}
+              <div className="flex items-center gap-2 shrink-0">
                 <select
                   className="h-7 rounded border border-prova-line bg-[#161b22] text-[11px] text-[#c9d1d9] px-2 focus:outline-none"
                   value={language}
@@ -893,20 +1387,13 @@ export default function Page() {
                     C++ (준비중)
                   </option>
                 </select>
-                <div className="inline-flex items-center rounded border border-prova-line overflow-hidden text-[10px] font-mono">
-                  <button
-                    className={`px-2 py-[2px] transition-colors ${tabSize === 2 ? "bg-[#21262d] text-white" : "text-prova-muted hover:text-[#c9d1d9]"}`}
-                    onClick={() => applyTabSizeToCode(2)}
-                  >
-                    Tab 2
-                  </button>
-                  <button
-                    className={`px-2 py-[2px] border-l border-prova-line transition-colors ${tabSize === 4 ? "bg-[#21262d] text-white" : "text-prova-muted hover:text-[#c9d1d9]"}`}
-                    onClick={() => applyTabSizeToCode(4)}
-                  >
-                    Tab 4
-                  </button>
-                </div>
+                <button
+                  className="h-7 px-2 rounded border border-prova-line bg-[#21262d] text-[10px] font-mono text-[#c9d1d9] hover:border-[#58a6ff]/40 transition-colors"
+                  onClick={() => applyTabSizeToCode(tabSize === 2 ? 4 : 2)}
+                  title={`현재 Tab ${tabSize} — 클릭하여 Tab ${tabSize === 2 ? 4 : 2}로 전환`}
+                >
+                  Tab {tabSize}
+                </button>
               </div>
             </div>
             {displayTags.length > 0 && (
@@ -925,21 +1412,114 @@ export default function Page() {
             )}
 
             {/* Code lines */}
-            <div className="flex-1 overflow-hidden bg-[#0d1117]">
+            <div
+              className={`flex-1 overflow-hidden relative transition-colors ${isDebugMode ? "bg-[#0c1016]" : "bg-prova-bg"}`}
+            >
+              {/* Copy / Edit / Wrap overlay buttons */}
+              <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
+                {isDebugMode && (
+                  <button
+                    className="h-6 w-6 flex items-center justify-center rounded border border-[#e3b341]/40 bg-[#3d2b00]/80 text-[#e3b341] hover:bg-[#4a3500] hover:border-[#e3b341]/70 transition-colors"
+                    onClick={() => {
+                      setPlaying(false);
+                      setUiMode("ready");
+                    }}
+                    title="편집 모드로 전환"
+                    aria-label="편집 모드로 전환"
+                  >
+                    <IconPencil />
+                  </button>
+                )}
+                <button
+                  className={`h-6 w-6 flex items-center justify-center rounded border transition-colors ${
+                    wordWrap
+                      ? "border-[#58a6ff]/50 bg-[#1a2d4a]/60 text-[#58a6ff]"
+                      : "border-prova-line bg-prova-panel/80 text-prova-muted hover:text-[#c9d1d9] hover:border-[#58a6ff]/40"
+                  }`}
+                  onClick={() => setWordWrap((v) => !v)}
+                  title={wordWrap ? "줄 바꿈 끄기" : "줄 바꿈 켜기"}
+                  aria-label="줄 바꿈 토글"
+                >
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <line x1="3" y1="6" x2="21" y2="6" />
+                    <path d="M3 12h15a3 3 0 0 1 0 6h-4" />
+                    <polyline points="11 15 8 18 11 21" />
+                    <line x1="3" y1="18" x2="8" y2="18" />
+                  </svg>
+                </button>
+                <button
+                  className={`h-6 w-6 flex items-center justify-center rounded border transition-colors ${
+                    copied
+                      ? "border-prova-green/50 bg-[#1a4731]/60 text-prova-green"
+                      : "border-prova-line bg-prova-panel/80 text-prova-muted hover:text-[#c9d1d9] hover:border-[#58a6ff]/40"
+                  }`}
+                  onClick={() => {
+                    navigator.clipboard.writeText(code);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 1500);
+                  }}
+                  title={copied ? "복사됨!" : "코드 복사"}
+                  aria-label="코드 복사"
+                >
+                  {copied ? (
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  ) : (
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                    </svg>
+                  )}
+                </button>
+              </div>
               {!isDebugMode ? (
                 <div className="relative w-full h-full overflow-hidden">
                   <div
                     ref={editorHighlightRef}
-                    className="absolute inset-0 overflow-auto prova-scrollbar p-3 box-border font-mono text-[12px] leading-6 whitespace-pre pointer-events-none"
+                    className={`absolute inset-0 prova-scrollbar p-3 box-border font-mono text-[12px] leading-5 pointer-events-none ${wordWrap ? "overflow-y-auto overflow-x-hidden" : "overflow-auto"}`}
                     style={{ tabSize }}
                     aria-hidden="true"
                   >
                     {code.length === 0 ? (
-                      <div className="grid grid-cols-[36px_1fr] border-l-2 border-[#58a6ff]/30">
-                        <span className="text-right pr-3 select-none text-[11px] leading-6 text-[#4a5568]">
+                      <div className="flex border-l-2 border-[#58a6ff]/30">
+                        <span className="w-9 shrink-0 text-right pr-3 select-none text-[11px] leading-5 text-[#4a5568]">
                           1
                         </span>
-                        <span className="pl-2 text-prova-muted">여기에 Python 코드를 입력하세요.</span>
+                        <span
+                          className={`pl-2 text-prova-muted ${wordWrap ? "whitespace-pre-wrap break-all" : "whitespace-pre"}`}
+                        >
+                          {language === "javascript"
+                            ? "여기에 JavaScript 코드를 입력하세요."
+                            : "여기에 Python 코드를 입력하세요."}
+                        </span>
                       </div>
                     ) : (
                       code.split("\n").map((line, lineIdx) => {
@@ -948,19 +1528,32 @@ export default function Page() {
                         return (
                           <div
                             key={`edit-line-${lineIdx}`}
-                            className={`grid grid-cols-[36px_1fr] ${isActiveLine ? "bg-[#1a2533]/55 border-l-2 border-[#58a6ff]" : "border-l-2 border-transparent"}`}
+                            className={`flex ${isActiveLine ? "bg-[#1a2533]/55 border-l-2 border-[#58a6ff]" : "border-l-2 border-transparent"}`}
                           >
-                            <span className={`text-right pr-3 select-none text-[11px] leading-6 ${
-                              isActiveLine ? "text-[#58a6ff]" : "text-[#4a5568]"
-                            }`}>
+                            <span
+                              className={`w-9 shrink-0 text-right pr-3 select-none text-[11px] leading-5 ${
+                                isActiveLine
+                                  ? "text-[#58a6ff]"
+                                  : "text-[#4a5568]"
+                              }`}
+                            >
                               {lineNo}
                             </span>
-                            <span className="pl-2">
-                              {(language === "javascript" ? highlightJsLine : highlightPythonLine)(line).map((token, idx) => (
-                                <span key={`edit-${lineIdx}-${idx}`} className={token.className}>
-                                  {token.text}
-                                </span>
-                              ))}
+                            <span
+                              className={`pl-2 ${wordWrap ? "whitespace-pre-wrap break-all" : "whitespace-pre"}`}
+                            >
+                              {(language === "javascript"
+                                ? highlightJsLine
+                                : highlightPythonLine)(line).map(
+                                (token, idx) => (
+                                  <span
+                                    key={`edit-${lineIdx}-${idx}`}
+                                    className={token.className}
+                                  >
+                                    {token.text}
+                                  </span>
+                                ),
+                              )}
                             </span>
                           </div>
                         );
@@ -972,22 +1565,48 @@ export default function Page() {
                     value={code}
                     onChange={(e) => {
                       setCode(e.target.value);
-                      setEditCursorLine(lineFromOffset(e.target.value, e.target.selectionStart ?? 0));
+                      setEditCursorLine(
+                        lineFromOffset(
+                          e.target.value,
+                          e.target.selectionStart ?? 0,
+                        ),
+                      );
                     }}
                     onSelect={(e) => {
-                      setEditCursorLine(lineFromOffset(code, e.currentTarget.selectionStart ?? 0));
+                      setEditCursorLine(
+                        lineFromOffset(
+                          code,
+                          e.currentTarget.selectionStart ?? 0,
+                        ),
+                      );
                     }}
                     onClick={(e) => {
-                      setEditCursorLine(lineFromOffset(code, e.currentTarget.selectionStart ?? 0));
+                      setEditCursorLine(
+                        lineFromOffset(
+                          code,
+                          e.currentTarget.selectionStart ?? 0,
+                        ),
+                      );
                     }}
                     onKeyUp={(e) => {
-                      setEditCursorLine(lineFromOffset(code, e.currentTarget.selectionStart ?? 0));
+                      setEditCursorLine(
+                        lineFromOffset(
+                          code,
+                          e.currentTarget.selectionStart ?? 0,
+                        ),
+                      );
                     }}
                     onScroll={(e) => {
                       if (!editorHighlightRef.current) return;
                       const target = e.currentTarget;
                       editorHighlightRef.current.scrollTop = target.scrollTop;
                       editorHighlightRef.current.scrollLeft = target.scrollLeft;
+                    }}
+                    onPaste={(e) => {
+                      const pasted = e.clipboardData.getData("text");
+                      const detected = detectIndentSize(pasted);
+                      if (detected && detected !== tabSize)
+                        setTabSize(detected);
                     }}
                     onKeyDown={(e) => {
                       if (e.key !== "Tab" || !editorRef.current) return;
@@ -998,19 +1617,23 @@ export default function Page() {
                       const indent = " ".repeat(tabSize);
                       const nextValue = `${code.slice(0, start)}${indent}${code.slice(end)}`;
                       setCode(nextValue);
-                      setEditCursorLine(lineFromOffset(nextValue, start + indent.length));
+                      setEditCursorLine(
+                        lineFromOffset(nextValue, start + indent.length),
+                      );
                       requestAnimationFrame(() => {
                         el.selectionStart = start + indent.length;
                         el.selectionEnd = start + indent.length;
                       });
                     }}
-                    className="absolute inset-0 w-full h-full resize-none overflow-auto prova-scrollbar bg-transparent text-transparent caret-[#c9d1d9] font-mono text-[12px] leading-6 pl-[56px] pr-3 py-3 box-border outline-none"
+                    className={`absolute inset-0 w-full h-full resize-none prova-scrollbar bg-transparent text-transparent caret-[#c9d1d9] font-mono text-[12px] leading-5 pl-14 pr-3 py-3 box-border outline-none ${wordWrap ? "overflow-y-auto overflow-x-hidden whitespace-pre-wrap break-all" : "overflow-auto whitespace-pre"}`}
                     style={{ tabSize }}
                     spellCheck={false}
                   />
                 </div>
               ) : (
-                <div className="box-border h-full overflow-auto p-3 prova-scrollbar">
+                <div
+                  className={`box-border h-full p-3 prova-scrollbar ${wordWrap ? "overflow-y-auto overflow-x-hidden" : "overflow-auto"}`}
+                >
                   {code.split("\n").map((line, index) => {
                     const lineNo = index + 1;
                     const active = currentStep?.line === lineNo;
@@ -1018,7 +1641,7 @@ export default function Page() {
                     return (
                       <div
                         key={lineNo}
-                        className={`grid grid-cols-[36px_1fr] gap-0 font-mono text-[12px] leading-6 transition-colors ${
+                        className={`flex font-mono text-[12px] leading-5 transition-colors ${
                           error
                             ? "bg-[#3d0b0b] border-l-2 border-prova-red"
                             : active
@@ -1026,17 +1649,28 @@ export default function Page() {
                               : "border-l-2 border-transparent"
                         }`}
                       >
-                        <span className={`text-right pr-3 select-none text-[11px] leading-6 ${
-                          active ? (error ? "text-prova-red" : "text-[#58a6ff]") : "text-[#4a5568]"
-                        }`}>
+                        <span
+                          className={`w-9 shrink-0 text-right pr-3 select-none text-[11px] leading-5 ${
+                            active
+                              ? error
+                                ? "text-prova-red"
+                                : "text-[#58a6ff]"
+                              : "text-[#4a5568]"
+                          }`}
+                        >
                           {lineNo}
                         </span>
                         <span
-                          className={`pl-2 whitespace-pre ${active && !error ? "text-white" : ""}`}
+                          className={`pl-2 ${wordWrap ? "whitespace-pre-wrap break-all" : "whitespace-pre"} ${active && !error ? "text-white" : ""}`}
                           style={{ tabSize }}
                         >
-                          {(language === "javascript" ? highlightJsLine : highlightPythonLine)(line).map((token, idx) => (
-                            <span key={`${lineNo}-${idx}`} className={token.className}>
+                          {(language === "javascript"
+                            ? highlightJsLine
+                            : highlightPythonLine)(line).map((token, idx) => (
+                            <span
+                              key={`${lineNo}-${idx}`}
+                              className={token.className}
+                            >
                               {token.text}
                             </span>
                           ))}
@@ -1065,7 +1699,7 @@ export default function Page() {
               dragTypeRef.current = "left";
               dragAnchorRef.current = {
                 leftCenterTotal: paneWidths.left + paneWidths.center,
-                leftWidth: paneWidths.left
+                leftWidth: paneWidths.left,
               };
               document.body.style.cursor = "col-resize";
               document.body.style.userSelect = "none";
@@ -1076,7 +1710,10 @@ export default function Page() {
           />
 
           {/* ── Visualization ─────────────────────────── */}
-          <section className="min-h-0 flex flex-col min-w-0" style={{ width: `${paneWidths.center}%` }}>
+          <section
+            className="min-h-0 flex flex-col min-w-0"
+            style={{ width: `${paneWidths.center}%` }}
+          >
             <div className="shrink-0 min-h-9 flex items-center justify-between gap-2 px-3 py-1.5 border-b border-prova-line bg-[#0f141a]">
               <div className="flex items-center gap-2 min-w-0 flex-1">
                 <span className="text-[10px] text-prova-muted uppercase tracking-widest font-medium shrink-0">
@@ -1084,13 +1721,13 @@ export default function Page() {
                     ? "Data Exploration"
                     : isAnalyzingCode
                       ? "Analyzing..."
-                    : effectiveStrategy === "GRAPH"
-                      ? "Graph Visualization"
-                    : effectiveStrategy === "GRID"
-                      ? "Grid Visualization"
-                      : effectiveStrategy === "LINEAR"
-                        ? "Linear Visualization"
-                        : "Hybrid Visualization"}
+                      : effectiveStrategy === "GRAPH"
+                        ? "Graph Visualization"
+                        : effectiveStrategy === "GRID"
+                          ? "Grid Visualization"
+                          : effectiveStrategy === "LINEAR"
+                            ? "Linear Visualization"
+                            : "Hybrid Visualization"}
                 </span>
                 {metadata?.time_complexity && !isAnalyzingCode && (
                   <span
@@ -1125,8 +1762,12 @@ export default function Page() {
                 <div className="h-full w-full grid place-items-center">
                   <div className="text-center">
                     <div className="mx-auto mb-4 h-9 w-9 rounded-full border-2 border-[#2f81f7]/25 border-t-[#58a6ff] animate-spin" />
-                    <p className="text-sm font-medium text-[#c9d1d9]">코드 분석중...</p>
-                    <p className="mt-2 text-xs text-prova-muted">AI 응답을 기다리는 중입니다.</p>
+                    <p className="text-sm font-medium text-[#c9d1d9]">
+                      코드 분석중...
+                    </p>
+                    <p className="mt-2 text-xs text-prova-muted">
+                      AI 응답을 기다리는 중입니다.
+                    </p>
                   </div>
                 </div>
               ) : shouldUseGraphPanel && !isFallback ? (
@@ -1142,10 +1783,23 @@ export default function Page() {
                   bitWidth={bitWidth}
                   linearPivots={metadata?.linear_pivots}
                   linearContextVarNames={metadata?.linear_context_var_names}
+                  playbackControls={{
+                    isPlaying: playback.isPlaying,
+                    currentStep: playback.currentStep,
+                    totalSteps: mergedTrace.length,
+                    playbackSpeed: playback.playbackSpeed,
+                    disabled: isRunning || mergedTrace.length === 0,
+                    onPrev: () => setCurrentStep(playback.currentStep - 1),
+                    onNext: () => setCurrentStep(playback.currentStep + 1),
+                    onTogglePlay: () => setPlaying(!playback.isPlaying),
+                    onSeek: (step) => setCurrentStep(step),
+                    onSpeedChange: (speed) => setSpeed(speed),
+                  }}
                 />
               ) : (
                 <GridLinearPanel
                   step={currentStep}
+                  traceSteps={mergedTrace}
                   previousStep={previousStep}
                   fallback={isFallback}
                   strategy={effectiveStrategy}
@@ -1154,6 +1808,18 @@ export default function Page() {
                   linearPivots={metadata?.linear_pivots}
                   linearContextVarNames={metadata?.linear_context_var_names}
                   linearArrayVarName={linearArrayVarName}
+                  playbackControls={{
+                    isPlaying: playback.isPlaying,
+                    currentStep: playback.currentStep,
+                    totalSteps: mergedTrace.length,
+                    playbackSpeed: playback.playbackSpeed,
+                    disabled: isRunning || mergedTrace.length === 0,
+                    onPrev: () => setCurrentStep(playback.currentStep - 1),
+                    onNext: () => setCurrentStep(playback.currentStep + 1),
+                    onTogglePlay: () => setPlaying(!playback.isPlaying),
+                    onSeek: (step) => setCurrentStep(step),
+                    onSpeedChange: (speed) => setSpeed(speed),
+                  }}
                 />
               )}
             </div>
@@ -1166,7 +1832,7 @@ export default function Page() {
               dragTypeRef.current = "right";
               dragAnchorRef.current = {
                 leftCenterTotal: paneWidths.left + paneWidths.center,
-                leftWidth: paneWidths.left
+                leftWidth: paneWidths.left,
               };
               document.body.style.cursor = "col-resize";
               document.body.style.userSelect = "none";
@@ -1189,43 +1855,60 @@ export default function Page() {
                   Debug Controls
                 </span>
                 <span className="text-[10px] text-prova-muted font-mono">
-                  Step {mergedTrace.length > 0 ? playback.currentStep + 1 : 0} / {mergedTrace.length}
+                  Step {mergedTrace.length > 0 ? playback.currentStep + 1 : 0} /{" "}
+                  {mergedTrace.length}
                 </span>
               </div>
               <input
                 type="range"
                 min={0}
                 max={Math.max(mergedTrace.length - 1, 0)}
-                value={Math.min(playback.currentStep, Math.max(mergedTrace.length - 1, 0))}
+                value={Math.min(
+                  playback.currentStep,
+                  Math.max(mergedTrace.length - 1, 0),
+                )}
                 onChange={(e) => setCurrentStep(Number(e.target.value))}
                 disabled={isRunning || mergedTrace.length === 0}
                 className="w-full accent-[#58a6ff] disabled:opacity-40"
               />
               <div className="flex items-center gap-2">
                 <button
-                  className="h-7 px-2 rounded border border-prova-line bg-[#161b22] text-[11px] text-prova-muted hover:text-white disabled:opacity-30"
+                  className="h-7 px-2 flex items-center justify-center rounded border border-prova-line bg-prova-panel text-prova-muted hover:text-white disabled:opacity-30 text-[10px] font-mono"
                   onClick={() => setCurrentStep(playback.currentStep - 1)}
-                  disabled={isRunning || mergedTrace.length === 0 || playback.currentStep === 0}
+                  disabled={
+                    isRunning ||
+                    mergedTrace.length === 0 ||
+                    playback.currentStep === 0
+                  }
+                  aria-label="Previous step"
                 >
-                  ◀ Prev
+                  Prev
                 </button>
                 <button
-                  className="h-7 px-3 rounded border border-prova-line bg-[#161b22] text-[11px] text-prova-muted hover:text-white disabled:opacity-30"
+                  className="h-7 px-2 flex items-center justify-center rounded border border-prova-line bg-prova-panel text-prova-muted hover:text-white disabled:opacity-30 text-[10px] font-mono"
                   onClick={() => setPlaying(!playback.isPlaying)}
                   disabled={isRunning || mergedTrace.length === 0}
+                  aria-label={playback.isPlaying ? "Pause" : "Play"}
                 >
                   {playback.isPlaying ? "Pause" : "Play"}
                 </button>
                 <button
-                  className={`h-7 px-2 rounded border text-[11px] transition-colors ${
-                    isRunning || mergedTrace.length === 0 || playback.currentStep >= mergedTrace.length - 1
+                  className={`h-7 px-2 flex items-center justify-center rounded border transition-colors text-[10px] font-mono ${
+                    isRunning ||
+                    mergedTrace.length === 0 ||
+                    playback.currentStep >= mergedTrace.length - 1
                       ? "border-prova-line bg-[#161b22] text-prova-muted opacity-30 cursor-not-allowed"
                       : "border-prova-green/45 bg-[#12301f] text-prova-green hover:bg-[#184329] hover:text-[#7ee787]"
                   }`}
                   onClick={() => setCurrentStep(playback.currentStep + 1)}
-                  disabled={isRunning || mergedTrace.length === 0 || playback.currentStep >= mergedTrace.length - 1}
+                  disabled={
+                    isRunning ||
+                    mergedTrace.length === 0 ||
+                    playback.currentStep >= mergedTrace.length - 1
+                  }
+                  aria-label="Next step"
                 >
-                  Next ▶
+                  Next
                 </button>
                 <div className="ml-auto flex items-center gap-1">
                   <span className="text-[10px] text-prova-muted">Speed</span>
@@ -1249,14 +1932,21 @@ export default function Page() {
 
             <div className="flex-1 min-h-0 flex flex-col">
               {/* Variable group */}
-              <div className="min-h-0 flex flex-col" style={{ height: `${rightHeights.variable}%` }}>
+              <div
+                className="min-h-0 flex flex-col"
+                style={{ height: `${rightHeights.variable}%` }}
+              >
                 <div className="shrink-0 h-9 flex items-center justify-between px-3 border-b border-prova-line bg-[#0f141a]">
                   <span className="text-[10px] text-prova-muted uppercase tracking-widest font-medium">
                     Variable Monitor
                   </span>
                   <div className="flex items-center gap-1 text-prova-muted">
-                    <button className="hover:text-[#c9d1d9] transition-colors"><IconRefresh /></button>
-                    <button className="hover:text-[#c9d1d9] transition-colors ml-1"><IconExpand /></button>
+                    <button className="hover:text-[#c9d1d9] transition-colors">
+                      <IconRefresh />
+                    </button>
+                    <button className="hover:text-[#c9d1d9] transition-colors ml-1">
+                      <IconExpand />
+                    </button>
                   </div>
                 </div>
                 <div className="shrink-0 px-3 py-[6px] bg-[#161b22] border-b border-prova-line">
@@ -1272,26 +1962,34 @@ export default function Page() {
                       실행 후 변수가 표시됩니다.
                     </div>
                   )}
-                  {currentStep && Object.entries(currentStep.vars).map(([key, value]) => {
-                    const changed = previousStep && JSON.stringify(previousStep.vars[key]) !== JSON.stringify(value);
-                    const isKey = metadata?.key_vars.includes(key);
-                    return (
-                      <div
-                        key={key}
-                        className={`grid grid-cols-[2fr_3fr] gap-2 px-3 py-[5px] border-b border-[#1c2128] text-xs transition-colors ${
-                          changed ? "bg-[#3d2b00]/40" : ""
-                        }`}
-                      >
-                        <span className={`font-mono truncate ${isKey ? "text-prova-green font-semibold" : "text-[#8b949e]"}`}>
-                          {key}
-                          {changed && <span className="ml-1 text-[#e3b341]">·</span>}
-                        </span>
-                        <span className="font-mono text-[#c9d1d9] truncate">
-                          {formatWithBitMode(value, bitmaskMode, bitWidth)}
-                        </span>
-                      </div>
-                    );
-                  })}
+                  {currentStep &&
+                    Object.entries(currentStep.vars).map(([key, value]) => {
+                      const changed =
+                        previousStep &&
+                        JSON.stringify(previousStep.vars[key]) !==
+                          JSON.stringify(value);
+                      const isKey = metadata?.key_vars.includes(key);
+                      return (
+                        <div
+                          key={key}
+                          className={`grid grid-cols-[2fr_3fr] gap-2 px-3 py-[5px] border-b border-[#1c2128] text-xs transition-colors ${
+                            changed ? "bg-[#3d2b00]/40" : ""
+                          }`}
+                        >
+                          <span
+                            className={`font-mono truncate ${isKey ? "text-prova-green font-semibold" : "text-[#8b949e]"}`}
+                          >
+                            {key}
+                            {changed && (
+                              <span className="ml-1 text-[#e3b341]">·</span>
+                            )}
+                          </span>
+                          <span className="font-mono text-[#c9d1d9] truncate">
+                            {formatWithBitMode(value, bitmaskMode, bitWidth)}
+                          </span>
+                        </div>
+                      );
+                    })}
                 </div>
               </div>
 
@@ -1309,25 +2007,32 @@ export default function Page() {
               />
 
               {/* Input group */}
-              <div className="min-h-0 flex flex-col" style={{ height: `${rightHeights.input}%` }}>
+              <div
+                className="min-h-0 flex flex-col"
+                style={{ height: `${rightHeights.input}%` }}
+              >
                 <div className="shrink-0 h-9 flex items-center justify-between px-3 border-y border-prova-line bg-[#0f141a]">
                   <span className="text-[10px] text-prova-muted uppercase tracking-widest font-medium">
                     Input
                   </span>
-                  <span className="text-[10px] text-prova-muted font-mono">stdin</span>
+                  <span className="text-[10px] text-prova-muted font-mono">
+                    stdin
+                  </span>
                 </div>
                 <div className="flex-1 min-h-0 bg-[#0d1117] p-3">
                   <div className="h-full rounded-md border border-[#30363d] bg-[#161b22] p-3 flex flex-col gap-3">
                     <textarea
                       className="flex-1 min-h-0 rounded border border-prova-line bg-[#0d1117] text-xs font-mono p-2 resize-none placeholder:text-prova-muted focus:outline-none focus:border-[#58a6ff]/60 transition-colors disabled:opacity-40"
-                      placeholder="줄마다 입력값을 작성하세요 (예: 5 3↵2 4 1)"
+                      placeholder="입력값을 작성하세요"
                       value={stdin}
                       onChange={(e) => setStdin(e.target.value)}
                       disabled={isRunning || pyodideStatus === "error"}
                     />
                     <button
                       className={`shrink-0 h-9 rounded text-xs font-bold tracking-wide transition-colors ${
-                    pyodideStatus === "ready" && !isCodeEmpty && !isStdinEmpty
+                        pyodideStatus === "ready" &&
+                        !isCodeEmpty &&
+                        !isStdinEmpty
                           ? mergedTrace.length > 0
                             ? "bg-[#21262d] border border-prova-line text-[#c9d1d9] hover:bg-[#262c36]"
                             : "bg-prova-green text-black hover:bg-[#4ac763]"
@@ -1335,24 +2040,44 @@ export default function Page() {
                             ? "bg-[#2d1112] border border-prova-red text-[#f8b4b4]"
                             : "bg-[#21262d] border border-prova-line text-prova-muted cursor-not-allowed"
                       }`}
-                  disabled={pyodideStatus !== "ready" || isCodeEmpty || isStdinEmpty}
-                  title={
-                    isCodeEmpty
-                      ? "코드를 입력한 후 디버깅을 시작하세요."
-                      : isStdinEmpty
-                        ? "예시 입력(stdin)을 입력한 후 디버깅을 시작하세요."
-                        : undefined
-                  }
+                      disabled={
+                        pyodideStatus !== "ready" || isCodeEmpty || isStdinEmpty
+                      }
+                      title={
+                        isCodeEmpty
+                          ? "코드를 입력한 후 디버깅을 시작하세요."
+                          : isStdinEmpty
+                            ? "예시 입력(stdin)을 입력한 후 디버깅을 시작하세요."
+                            : undefined
+                      }
                       onClick={() => {
-                    if (pyodideStatus !== "ready") return;
-                    if (isCodeEmpty) {
-                      addToast("warn", "코드를 입력한 후 디버깅을 시작하세요.");
-                      return;
-                    }
-                    if (isStdinEmpty) {
-                      addToast("warn", "예시 입력(stdin)을 입력한 후 디버깅을 시작하세요.");
-                      return;
-                    }
+                        if (pyodideStatus !== "ready") return;
+                        const runLanguage = detectLanguageFromCode(
+                          code,
+                          normalizedLanguage,
+                        );
+                        if (runLanguage !== normalizedLanguage) {
+                          setLanguage(runLanguage);
+                          addToast(
+                            "ok",
+                            `코드 패턴을 감지해 ${runLanguage === "javascript" ? "JavaScript" : "Python"}로 전환했습니다. 다시 실행해 주세요.`,
+                          );
+                          return;
+                        }
+                        if (isCodeEmpty) {
+                          addToast(
+                            "warn",
+                            "코드를 입력한 후 디버깅을 시작하세요.",
+                          );
+                          return;
+                        }
+                        if (isStdinEmpty) {
+                          addToast(
+                            "warn",
+                            "예시 입력(stdin)을 입력한 후 디버깅을 시작하세요.",
+                          );
+                          return;
+                        }
                         try {
                           localStorage.setItem(LAST_EXECUTED_CODE_KEY, code);
                           localStorage.setItem(LAST_EXECUTED_STDIN_KEY, stdin);
@@ -1365,7 +2090,13 @@ export default function Page() {
                         runtimeRef.current?.run(code, stdin);
                       }}
                     >
-                  {runButtonLabel(pyodideStatus, mergedTrace.length > 0, isCodeEmpty, isStdinEmpty, language)}
+                      {runButtonLabel(
+                        pyodideStatus,
+                        mergedTrace.length > 0,
+                        isCodeEmpty,
+                        isStdinEmpty,
+                        language,
+                      )}
                     </button>
                   </div>
                 </div>
@@ -1385,26 +2116,40 @@ export default function Page() {
               />
 
               {/* Output group */}
-              <div className="min-h-0 flex flex-col" style={{ height: `${rightHeights.output}%` }}>
+              <div
+                className="min-h-0 flex flex-col"
+                style={{ height: `${rightHeights.output}%` }}
+              >
                 <div className="shrink-0 h-9 flex items-center justify-between px-3 border-y border-prova-line bg-[#0f141a]">
                   <span className="text-[10px] text-prova-muted uppercase tracking-widest font-medium">
                     Output
                   </span>
-                  <span className={`text-[10px] font-mono ${isError ? "text-prova-red" : "text-prova-muted"}`}>
+                  <span
+                    className={`text-[10px] font-mono ${isError ? "text-prova-red" : "text-prova-muted"}`}
+                  >
                     {isError ? "error" : "stdout"}
                   </span>
                 </div>
-                <div className={`flex-1 overflow-auto min-h-0 p-3 text-xs font-mono leading-5 ${
-                  isError ? "bg-[#140a0a]" : "bg-[#0d1117]"
-                }`}>
-                  <div className={`h-full rounded-md border px-3 py-2 overflow-auto ${
-                    isError ? "border-prova-red/40 bg-[#12090b] text-[#ffc1c1]" : "border-[#30363d] bg-[#0b1119] text-[#c9d1d9]"
-                  }`}>
+                <div
+                  className={`flex-1 overflow-auto min-h-0 p-3 text-xs font-mono leading-5 ${
+                    isError ? "bg-[#140a0a]" : "bg-[#0d1117]"
+                  }`}
+                >
+                  <div
+                    className={`h-full rounded-md border px-3 py-2 overflow-auto ${
+                      isError
+                        ? "border-prova-red/40 bg-[#12090b] text-[#ffc1c1]"
+                        : "border-[#30363d] bg-[#0b1119] text-[#c9d1d9]"
+                    }`}
+                  >
                     {consoleLines.length === 0 ? (
                       <p className="text-prova-muted"> </p>
                     ) : (
                       consoleLines.map((line, idx) => (
-                        <p key={`${line}-${idx}`} className="whitespace-pre-wrap break-words">
+                        <p
+                          key={`${line}-${idx}`}
+                          className="whitespace-pre-wrap break-words"
+                        >
                           {line}
                         </p>
                       ))

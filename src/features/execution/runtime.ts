@@ -16,7 +16,10 @@ export class ProvaRuntime {
 
   private timeoutId: ReturnType<typeof setTimeout> | null = null;
 
-  constructor(private callbacks: RuntimeCallbacks, private language: string = "python") {}
+  constructor(
+    private callbacks: RuntimeCallbacks,
+    private language: string = "python",
+  ) {}
 
   init() {
     this.createWorker();
@@ -28,7 +31,9 @@ export class ProvaRuntime {
       return;
     }
     if (this.language === "python" && stdin.trim().length === 0) {
-      this.callbacks.onInvalidInput("예시 입력(stdin)을 입력한 후 디버깅을 시작하세요.");
+      this.callbacks.onInvalidInput(
+        "예시 입력(stdin)을 입력한 후 디버깅을 시작하세요.",
+      );
       return;
     }
     if (!this.worker) {
@@ -45,9 +50,11 @@ export class ProvaRuntime {
       stdin,
       limits: {
         maxTraceSteps: provaRuntimeConfig.maxTraceSteps,
-        safeSerializeListLimitRoot: provaRuntimeConfig.safeSerializeListLimitRoot,
-        safeSerializeListLimitNested: provaRuntimeConfig.safeSerializeListLimitNested
-      }
+        safeSerializeListLimitRoot:
+          provaRuntimeConfig.safeSerializeListLimitRoot,
+        safeSerializeListLimitNested:
+          provaRuntimeConfig.safeSerializeListLimitNested,
+      },
     });
   }
 
@@ -58,8 +65,10 @@ export class ProvaRuntime {
   }
 
   private workerUrl(): string {
-    if (this.language === "javascript") return "/worker/js.worker.js";
-    return "/worker/pyodide.worker.js";
+    const version = encodeURIComponent(provaRuntimeConfig.workerScriptVersion);
+    if (this.language === "javascript")
+      return `/worker/js.worker.js?v=${version}`;
+    return `/worker/pyodide.worker.js?v=${version}`;
   }
 
   private createWorker() {
@@ -78,7 +87,9 @@ export class ProvaRuntime {
       }
       if (data.type === "invalid_input") {
         this.clearTimeout();
-        this.callbacks.onInvalidInput(String(data.message ?? "입력 코드가 비어 있습니다."));
+        this.callbacks.onInvalidInput(
+          String(data.message ?? "입력 코드가 비어 있습니다."),
+        );
       }
     };
     this.worker.onerror = (event) => {
