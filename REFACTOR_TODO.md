@@ -133,9 +133,9 @@ it('GridLinearPanel은 step이 null일 때 플레이스홀더를 보여준다')
 
 #### 2G. 텍스트 유틸
 
-- [ ] `src/lib/textUtils.ts` 생성
-- [ ] `page.tsx` → `lineFromOffset()`(L375), `stableStringifyObject()`(L624), indent 감지/변환 로직 추출
-- [ ] 유닛 테스트 작성 → `npm run test` 통과
+- [x] `src/lib/textUtils.ts` 생성 (`lineFromOffset`, `stableStringifyObject`, `detectIndentSize`, `convertIndent`)
+- [x] `page.tsx` → 4개 함수 추출 + `applyTabSizeToCode` 내부 변환 로직을 `convertIndent` 호출로 교체
+- [x] 유닛 테스트 작성 → 17개 통과
 
 ### Phase 3: 비즈니스 로직 / 훅 분리 (3순위)
 
@@ -220,6 +220,7 @@ it('GridLinearPanel은 step이 null일 때 플레이스홀더를 보여준다')
 - [ ] **`detectLanguageFromCode` 주석 내 키워드 반영 버그** — 라인 구문 스코어링에서는 주석(`#`, `//`)을 제거하지만, 단어 키워드 매칭에서는 원본 텍스트(`compact`)를 사용하여 주석 내 키워드도 스코어에 반영됨. `compact` 대신 주석 제거된 텍스트를 사용해야 함. (`src/lib/languageDetection.ts`)
 - [ ] **`collectUserDeclaredSymbols` JS function 파라미터 추출 버그** — `arg.replace(/[=\s].*/, "")`에서 `[=\s]`의 `\s`가 선행 공백을 먼저 매칭하여, 콤마 뒤 공백이 있는 두 번째 이후 파라미터(`", arr"`)가 빈 문자열로 소실됨. `.trim()` 후 `replace` 하거나 `/=.*/`로 변경 필요. (`src/lib/traceSanitize.ts`)
 - [ ] **`highlightJsLine` $ 접두 식별자 버그** — JS 토크나이저의 식별자 정규식 `\b[A-Za-z_$][A-Za-z0-9_$]*\b`에서 `\b`가 `$` 앞에서 word boundary로 동작하지 않아, `$el` 같은 식별자가 `"$"(갭) + "el"(식별자)`로 분리됨. `\b` 대신 `(?<![A-Za-z0-9_$])` lookbehind 사용 등으로 수정 필요. (`src/lib/syntaxHighlight.ts`)
+- [ ] **`detectIndentSize` 탭 문자 무시 버그** — `/^( +)/`로 공백만 매칭하여 탭(`\t`)으로 들여쓴 코드는 GCD 계산에서 제외됨. 탭 들여쓰기 코드를 붙여넣으면 indent 크기 감지가 작동하지 않아 자동 변환이 트리거되지 않음. (`src/lib/textUtils.ts`)
 
 ### 리팩토링 중 발견된 버그 처리 원칙
 - 테스트는 **현재 동작**(버그 포함)에 맞춰 작성하고, 테스트 내에 TODO 주석으로 버그를 표시한다

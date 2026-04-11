@@ -22,6 +22,7 @@ import {
   sanitizeVarTypesWithAllowlist,
 } from "@/lib/traceSanitize";
 import { maxNumericAbs, formatWithBitMode } from "@/lib/formatValue";
+import { lineFromOffset, stableStringifyObject, detectIndentSize, convertIndent } from "@/lib/textUtils";
 
 /* ── Helpers ─────────────────────────────────────────────── */
 function runButtonLabel(
@@ -43,20 +44,9 @@ function runButtonLabel(
   return hasTrace ? "▶ 디버깅 다시 실행" : "▶ 디버깅 시작";
 }
 
-function lineFromOffset(text: string, offset: number) {
-  return text.slice(0, Math.max(0, offset)).split("\n").length;
-}
-
 const LAST_EXECUTED_CODE_KEY = "prova:lastExecutedCode";
 const LAST_EXECUTED_STDIN_KEY = "prova:lastExecutedStdin";
 const LAST_SELECTED_LANGUAGE_KEY = "prova:lastSelectedLanguage";
-function stableStringifyObject(obj: Record<string, string>) {
-  return JSON.stringify(
-    Object.fromEntries(
-      Object.entries(obj).sort(([a], [b]) => a.localeCompare(b)),
-    ),
-  );
-}
 
 async function fetchErrorExplanation(
   steps: RawTraceStep[],
@@ -440,46 +430,10 @@ export default function Page() {
     return () => clearTimeout(timer);
   }, [inferredLanguage, isRunning, normalizedLanguage]);
 
-  const detectIndentSize = (text: string): 2 | 4 | null => {
-    let gcd = 0;
-    for (const line of text.split("\n")) {
-      const m = line.match(/^( +)/);
-      if (!m) continue;
-      const n = m[1].length;
-      let a = gcd,
-        b = n;
-      while (b) {
-        [a, b] = [b, a % b];
-      }
-      gcd = a;
-    }
-    if (gcd === 0) return null;
-    return gcd <= 2 ? 2 : 4;
-  };
-
   const applyTabSizeToCode = (nextTabSize: 2 | 4) => {
     if (nextTabSize === tabSize) return;
-
-    const converted = code
-      .split("\n")
-      .map((line) => {
-        const indentMatch = line.match(/^[\t ]+/);
-        if (!indentMatch) return line;
-
-        const indent = indentMatch[0];
-        const body = line.slice(indent.length);
-        let columns = 0;
-        for (const ch of indent) {
-          columns += ch === "\t" ? tabSize : 1;
-        }
-        const level = Math.round(columns / tabSize);
-        const nextIndent = " ".repeat(level * nextTabSize);
-        return `${nextIndent}${body}`;
-      })
-      .join("\n");
-
     setTabSize(nextTabSize);
-    setCode(converted);
+    setCode(convertIndent(code, tabSize, nextTabSize));
   };
   const consoleLines = useMemo(() => {
     if (!currentStep) return [];
