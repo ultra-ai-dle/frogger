@@ -113,9 +113,12 @@ export interface PlaybackState {
   playbackSpeed: number;
 }
 
+/** 시각화 패널 종류 */
 export type Panel = "GRID" | "LINEAR" | "GRAPH" | "VARIABLES";
+/** AI가 결정하는 시각화 전략 */
 export type Strategy = "GRID" | "LINEAR" | "GRID_LINEAR" | "GRAPH";
 
+/** /api/analyze AI 응답 원본 스키마 — normalizeResponse()로 AnalyzeMetadata로 변환 */
 export type AnalyzeAiResponse = {
   algorithm: string;
   display_name: string;
