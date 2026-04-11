@@ -36,6 +36,10 @@ export interface RawTraceStep {
   parent_frames: ParentFrame[];
   stdout?: string[];
   runtimeError: RuntimeErrorInfo | null;
+  /** callsite: called from parent; return: function is returning */
+  event?: "callsite" | "return";
+  /** return event에만 존재 — 반환값 */
+  returnValue?: unknown;
 }
 
 export interface AiErrorInfo {

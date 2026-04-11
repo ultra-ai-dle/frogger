@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { GridLinearPanel } from "@/features/visualization/GridLinearPanel";
 import { GraphPanel } from "@/features/visualization/GraphPanel";
+import { CallTreePanel } from "@/features/visualization/CallTreePanel";
+import { buildCallTree } from "@/features/visualization/callTreeBuilder";
 import { ProvaRuntime } from "@/features/execution/runtime";
 import { AnalyzeMetadata, AnnotatedStep, RawTraceStep } from "@/types/prova";
 import { useProvaStore } from "@/store/useProvaStore";
@@ -718,12 +720,20 @@ export default function Page() {
   const splitRootRef = useRef<HTMLDivElement | null>(null);
   const rightPaneRef = useRef<HTMLDivElement | null>(null);
   const dragTypeRef = useRef<
-    "left" | "right" | "var-input" | "input-output" | null
+    "left" | "right" | "var-input" | "input-output" | "calltree" | null
   >(null);
   const dragAnchorRef = useRef<{
     leftCenterTotal: number;
     leftWidth: number;
   } | null>(null);
+  const callTreeDragAnchorRef = useRef<{
+    startX: number;
+    startWidth: number;
+  } | null>(null);
+  const [callTreeWidth, setCallTreeWidth] = useState(208);
+  const [callTreeOpen, setCallTreeOpen] = useState(true);
+  const CALLTREE_MIN = 140;
+  const CALLTREE_MAX = 400;
   const [paneWidths, setPaneWidths] = useState({
     left: 34,
     center: 38,
@@ -808,6 +818,24 @@ export default function Page() {
     if (hasGraphTag) return "GRAPH" as const;
     return metadata.strategy;
   }, [metadata, displayTags]);
+  const isRecursive = useMemo(() => {
+    if (mergedTrace.length === 0) return false;
+    const tree = buildCallTree(mergedTrace);
+    // 재귀 = 동일 함수명이 트리에서 2회 이상 등장하거나, 호출 깊이가 3 이상
+    const funcCounts = new Map<string, number>();
+    function walk(nodes: typeof tree.roots) {
+      for (const n of nodes) {
+        funcCounts.set(n.func, (funcCounts.get(n.func) ?? 0) + 1);
+        walk(n.children);
+      }
+    }
+    walk(tree.roots);
+    const maxCount = Math.max(0, ...funcCounts.values());
+    const hasDeepRecursion = [...funcCounts.values()].some((c) => c >= 2);
+    const hasDeepDepth = mergedTrace.some((s) => s.scope.depth >= 4);
+    return hasDeepRecursion || maxCount >= 2 || hasDeepDepth;
+  }, [mergedTrace]);
+
   const shouldUseGraphPanel = useMemo(() => {
     if (isAnalyzingCode || !currentStep) return false;
     if (effectiveStrategy === "GRAPH") return true;
@@ -863,6 +891,16 @@ export default function Page() {
   useEffect(() => {
     const onMouseMove = (e: MouseEvent) => {
       if (!dragTypeRef.current || !splitRootRef.current) return;
+
+      if (dragTypeRef.current === "calltree") {
+        const anchor = callTreeDragAnchorRef.current;
+        if (!anchor) return;
+        const dx = e.clientX - anchor.startX;
+        const raw = anchor.startWidth + dx;
+        const next = Math.max(CALLTREE_MIN, Math.min(CALLTREE_MAX, raw));
+        setCallTreeWidth(next);
+        return;
+      }
 
       if (
         (dragTypeRef.current === "var-input" ||
@@ -932,9 +970,25 @@ export default function Page() {
       });
     };
 
-    const onMouseUp = () => {
+    const onMouseUp = (e: MouseEvent) => {
+      if (dragTypeRef.current === "calltree") {
+        const anchor = callTreeDragAnchorRef.current;
+        if (anchor) {
+          const dx = e.clientX - anchor.startX;
+          const raw = anchor.startWidth + dx;
+          if (raw < CALLTREE_MIN / 2) {
+            setCallTreeOpen(true);
+          } else {
+            setCallTreeOpen(true);
+            setCallTreeWidth(
+              Math.max(CALLTREE_MIN, Math.min(CALLTREE_MAX, raw)),
+            );
+          }
+        }
+      }
       dragTypeRef.current = null;
       dragAnchorRef.current = null;
+      callTreeDragAnchorRef.current = null;
       document.body.style.cursor = "";
       document.body.style.userSelect = "";
     };
@@ -1830,79 +1884,149 @@ export default function Page() {
                 </div>
               )}
             </div>
-            <div className="flex-1 min-h-0 overflow-hidden bg-[#0d1117]">
-              {isAnalyzingCode ? (
-                <div className="h-full w-full grid place-items-center">
-                  <div className="text-center">
-                    <div className="mx-auto mb-4 h-9 w-9 rounded-full border-2 border-[#2f81f7]/25 border-t-[#58a6ff] animate-spin" />
-                    <p className="text-sm font-medium text-[#c9d1d9]">
-                      코드 분석중...
-                    </p>
-                    <p className="mt-2 text-xs text-prova-muted">
-                      AI 응답을 기다리는 중입니다.
-                    </p>
+            <div className="flex-1 min-h-0 overflow-hidden bg-[#0d1117] flex">
+              {/* Call Tree panel — shown when recursive */}
+              {isRecursive && !isAnalyzingCode && mergedTrace.length > 0 && (
+                <>
+                  <div
+                    className="shrink-0 border-r border-prova-line overflow-hidden transition-all duration-150"
+                    style={{ width: callTreeOpen ? callTreeWidth : 0 }}
+                  >
+                    {callTreeOpen && (
+                      <CallTreePanel
+                        traceSteps={mergedTrace}
+                        currentStep={playback.currentStep}
+                        onJumpToStep={(stepIdx) => setCurrentStep(stepIdx)}
+                      />
+                    )}
                   </div>
-                </div>
-              ) : shouldUseGraphPanel && !isFallback ? (
-                <GraphPanel
-                  step={currentStep}
-                  graphMode={graphDisplayMode}
-                  graphVarName={metadata?.graph_var_name}
-                  graphVarNames={Object.values(metadata?.var_mapping ?? {})
-                    .filter((item) => item.panel === "GRAPH")
-                    .map((item) => item.var_name)}
-                  traceSteps={mergedTrace}
-                  bitmaskMode={bitmaskMode}
-                  bitWidth={bitWidth}
-                  linearPivots={metadata?.linear_pivots}
-                  linearContextVarNames={metadata?.linear_context_var_names}
-                  specialVarKinds={metadata?.special_var_kinds}
-                  playbackControls={{
-                    isPlaying: playback.isPlaying,
-                    currentStep: playback.currentStep,
-                    totalSteps: mergedTrace.length,
-                    playbackSpeed: playback.playbackSpeed,
-                    disabled: isRunning || mergedTrace.length === 0,
-                    onPrev: () => setCurrentStep(playback.currentStep - 1),
-                    onNext: () => setCurrentStep(playback.currentStep + 1),
-                    onTogglePlay: () => setPlaying(!playback.isPlaying),
-                    onSeek: (step) => setCurrentStep(step),
-                    onSpeedChange: (speed) => setSpeed(speed),
-                  }}
-                />
-              ) : (
-                <GridLinearPanel
-                  step={currentStep}
-                  traceSteps={mergedTrace}
-                  previousStep={previousStep}
-                  fallback={isFallback}
-                  strategy={effectiveStrategy}
-                  bitmaskMode={bitmaskMode}
-                  bitWidth={bitWidth}
-                  linearPivots={metadata?.linear_pivots}
-                  linearContextVarNames={metadata?.linear_context_var_names}
-                  linearArrayVarName={linearArrayVarName}
-                  playbackControls={{
-                    isPlaying: playback.isPlaying,
-                    currentStep: playback.currentStep,
-                    totalSteps: mergedTrace.length,
-                    playbackSpeed: playback.playbackSpeed,
-                    disabled: isRunning || mergedTrace.length === 0,
-                    onPrev: () => setCurrentStep(playback.currentStep - 1),
-                    onNext: () => setCurrentStep(playback.currentStep + 1),
-                    onTogglePlay: () => setPlaying(!playback.isPlaying),
-                    onSeek: (step) => setCurrentStep(step),
-                    onSpeedChange: (speed) => setSpeed(speed),
-                  }}
-                />
+                  {/* Resize handle + toggle button */}
+                  <div className="relative shrink-0 flex items-center">
+                    {/* Drag handle */}
+                    <div
+                      className="w-1 h-full bg-prova-line/70 hover:bg-[#58a6ff]/80 cursor-col-resize transition-colors"
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        dragTypeRef.current = "calltree";
+                        callTreeDragAnchorRef.current = {
+                          startX: e.clientX,
+                          startWidth: callTreeOpen ? callTreeWidth : 0,
+                        };
+                        document.body.style.cursor = "col-resize";
+                        document.body.style.userSelect = "none";
+                      }}
+                    />
+                    {/* Toggle button */}
+                    <button
+                      className="absolute top-1/2 -translate-y-1/2 -right-3 z-10 w-5 h-10 flex items-center justify-center rounded-r border border-l-0 border-prova-line bg-[#161b22] hover:bg-[#21262d] text-prova-muted hover:text-[#c9d1d9] transition-colors"
+                      onClick={() => setCallTreeOpen((p) => !p)}
+                      title={callTreeOpen ? "Call Tree 접기" : "Call Tree 열기"}
+                    >
+                      <svg
+                        width="8"
+                        height="12"
+                        viewBox="0 0 8 12"
+                        fill="currentColor"
+                      >
+                        {callTreeOpen ? (
+                          <path
+                            d="M6 1L2 6l4 5"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            fill="none"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        ) : (
+                          <path
+                            d="M2 1l4 5-4 5"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            fill="none"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        )}
+                      </svg>
+                    </button>
+                  </div>
+                </>
               )}
+              <div className="flex-1 min-h-0 overflow-hidden">
+                {isAnalyzingCode ? (
+                  <div className="h-full w-full grid place-items-center">
+                    <div className="text-center">
+                      <div className="mx-auto mb-4 h-9 w-9 rounded-full border-2 border-[#2f81f7]/25 border-t-[#58a6ff] animate-spin" />
+                      <p className="text-sm font-medium text-[#c9d1d9]">
+                        코드 분석중...
+                      </p>
+                      <p className="mt-2 text-xs text-prova-muted">
+                        AI 응답을 기다리는 중입니다.
+                      </p>
+                    </div>
+                  </div>
+                ) : shouldUseGraphPanel && !isFallback ? (
+                  <GraphPanel
+                    step={currentStep}
+                    graphMode={graphDisplayMode}
+                    graphVarName={metadata?.graph_var_name}
+                    graphVarNames={Object.values(metadata?.var_mapping ?? {})
+                      .filter((item) => item.panel === "GRAPH")
+                      .map((item) => item.var_name)}
+                    traceSteps={mergedTrace}
+                    bitmaskMode={bitmaskMode}
+                    bitWidth={bitWidth}
+                    linearPivots={metadata?.linear_pivots}
+                    linearContextVarNames={metadata?.linear_context_var_names}
+                    specialVarKinds={metadata?.special_var_kinds}
+                    playbackControls={{
+                      isPlaying: playback.isPlaying,
+                      currentStep: playback.currentStep,
+                      totalSteps: mergedTrace.length,
+                      playbackSpeed: playback.playbackSpeed,
+                      disabled: isRunning || mergedTrace.length === 0,
+                      onPrev: () => setCurrentStep(playback.currentStep - 1),
+                      onNext: () => setCurrentStep(playback.currentStep + 1),
+                      onTogglePlay: () => setPlaying(!playback.isPlaying),
+                      onSeek: (step) => setCurrentStep(step),
+                      onSpeedChange: (speed) => setSpeed(speed),
+                    }}
+                  />
+                ) : (
+                  <GridLinearPanel
+                    step={currentStep}
+                    traceSteps={mergedTrace}
+                    previousStep={previousStep}
+                    fallback={isFallback}
+                    strategy={effectiveStrategy}
+                    bitmaskMode={bitmaskMode}
+                    bitWidth={bitWidth}
+                    linearPivots={metadata?.linear_pivots}
+                    linearContextVarNames={metadata?.linear_context_var_names}
+                    linearArrayVarName={linearArrayVarName}
+                    playbackControls={{
+                      isPlaying: playback.isPlaying,
+                      currentStep: playback.currentStep,
+                      totalSteps: mergedTrace.length,
+                      playbackSpeed: playback.playbackSpeed,
+                      disabled: isRunning || mergedTrace.length === 0,
+                      onPrev: () => setCurrentStep(playback.currentStep - 1),
+                      onNext: () => setCurrentStep(playback.currentStep + 1),
+                      onTogglePlay: () => setPlaying(!playback.isPlaying),
+                      onSeek: (step) => setCurrentStep(step),
+                      onSpeedChange: (speed) => setSpeed(speed),
+                    }}
+                  />
+                )}
+              </div>
             </div>
           </section>
 
           {/* Joint: center-right */}
           <div
             className="w-1 shrink-0 bg-prova-line/70 hover:bg-[#58a6ff]/80 cursor-col-resize transition-colors"
-            onMouseDown={() => {
+            onMouseDown={(e) => {
+              e.stopPropagation();
               dragTypeRef.current = "right";
               dragAnchorRef.current = {
                 leftCenterTotal: paneWidths.left + paneWidths.center,
