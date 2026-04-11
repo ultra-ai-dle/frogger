@@ -8,6 +8,7 @@ import { AnalyzeMetadata, RawTraceStep } from "@/types/prova";
 import { useProvaStore } from "@/store/useProvaStore";
 import { resolveGraphMode } from "@/lib/graphModeInference";
 import { normalizeAndDedupeTags } from "@/lib/tagNormalize";
+import { getFromCache, saveToCache } from "@/lib/analyzeCache";
 
 /* ── SVG Icons ─────────────────────────────────────────── */
 const IconFiles = () => (
@@ -729,9 +730,12 @@ export default function Page() {
         setWorkerResult(sanitizedPayload);
         try {
           const analyzeKey = `${analyzeLanguage}\n@@\n${codeRef.current}\n@@\n${stableStringifyObject(sanitizedVarTypes)}\n@@\nmeta-v2-partition-pivot`;
-          const cachedMeta = analyzeCacheRef.current.get(analyzeKey);
+          const cachedMeta =
+            analyzeCacheRef.current.get(analyzeKey) ??
+            (await getFromCache(analyzeKey));
           let meta: AnalyzeMetadata;
           if (cachedMeta) {
+            analyzeCacheRef.current.set(analyzeKey, cachedMeta);
             meta = cachedMeta;
           } else {
             const inFlight = analyzeInFlightRef.current.get(analyzeKey);
@@ -762,6 +766,7 @@ export default function Page() {
               try {
                 meta = await request;
                 analyzeCacheRef.current.set(analyzeKey, meta);
+                saveToCache(analyzeKey, meta);
               } finally {
                 analyzeInFlightRef.current.delete(analyzeKey);
               }
