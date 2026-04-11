@@ -3,6 +3,7 @@ import { AnalyzeMetadata, LinearPivotSpec } from "@/types/prova";
 import { inferGraphModeFromCode } from "@/lib/graphModeInference";
 import { enrichAnalyzeMetadataWithPartitionValuePivots } from "@/lib/partitionPivotEnrichment";
 import { normalizeAndDedupeTags } from "@/lib/tagNormalize";
+import { stripCodeFence, tryParseJson } from "@/lib/jsonParsing";
 import {
   buildChain,
   callWithFallback,
@@ -51,82 +52,6 @@ type AnalyzeAiResponse = {
 
 const ANALYZE_CODE_CHAR_LIMIT = 5000;
 const ANALYZE_VAR_TYPES_LIMIT = 40;
-
-function stripCodeFence(text: string) {
-  return text
-    .replace(/^```json\s*/i, "")
-    .replace(/^```\s*/i, "")
-    .replace(/\s*```$/, "")
-    .trim();
-}
-
-function extractFirstJsonObject(text: string) {
-  const cleaned = stripCodeFence(text);
-  const start = cleaned.indexOf("{");
-  if (start < 0) return cleaned;
-  let depth = 0;
-  let inString = false;
-  let escaped = false;
-  for (let i = start; i < cleaned.length; i += 1) {
-    const ch = cleaned[i];
-    if (inString) {
-      if (escaped) {
-        escaped = false;
-      } else if (ch === "\\") {
-        escaped = true;
-      } else if (ch === '"') {
-        inString = false;
-      }
-      continue;
-    }
-    if (ch === '"') {
-      inString = true;
-      continue;
-    }
-    if (ch === "{") depth += 1;
-    if (ch === "}") {
-      depth -= 1;
-      if (depth === 0) {
-        return cleaned.slice(start, i + 1);
-      }
-    }
-  }
-  return cleaned;
-}
-
-function sanitizeJsonCandidate(text: string) {
-  return text
-    .replace(/^\uFEFF/, "")
-    .replace(/[“”]/g, '"')
-    .replace(/[‘’]/g, "'")
-    .replace(/,\s*([}\]])/g, "$1")
-    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "")
-    .trim();
-}
-
-function tryParseAnalyzeJson(text: string): AnalyzeAiResponse | null {
-  const candidate = extractFirstJsonObject(text);
-  const attempts: string[] = [];
-
-  attempts.push(candidate);
-  attempts.push(sanitizeJsonCandidate(candidate));
-
-  const first = candidate.indexOf("{");
-  const last = candidate.lastIndexOf("}");
-  if (first >= 0 && last > first) {
-    attempts.push(candidate.slice(first, last + 1));
-    attempts.push(sanitizeJsonCandidate(candidate.slice(first, last + 1)));
-  }
-
-  for (const raw of attempts) {
-    try {
-      return JSON.parse(raw) as AnalyzeAiResponse;
-    } catch {
-      // try next repaired candidate
-    }
-  }
-  return null;
-}
 
 function uniq(items: string[]) {
   return Array.from(new Set(items.filter(Boolean)));
@@ -839,7 +764,7 @@ async function analyzeWithAi(
   };
 
   const parseAndPostProcess = (raw: string) => {
-    const parsed = tryParseAnalyzeJson(raw);
+    const parsed = tryParseJson<AnalyzeAiResponse>(raw);
     if (!parsed) {
       const preview = stripCodeFence(raw).slice(0, 500);
       console.error("[/api/analyze] parse failed raw preview:", preview);

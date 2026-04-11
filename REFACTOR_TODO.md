@@ -110,10 +110,10 @@ it('GridLinearPanel은 step이 null일 때 플레이스홀더를 보여준다')
 
 #### 2D. JSON 파싱 (API 공유)
 
-- [ ] `src/lib/jsonParsing.ts` 생성
-- [ ] `analyze/route.ts` → `stripCodeFence()`(L55), `extractFirstJsonObject()`(L63), `sanitizeJsonCandidate()`(L97), `tryParseAnalyzeJson()`(L107) 추출
-- [ ] `explain/route.ts` → `stripFence()`(L51) 제거, `jsonParsing.ts` import로 교체
-- [ ] 유닛 테스트 작성 → `npm run test` 통과
+- [x] `src/lib/jsonParsing.ts` 생성 (`stripCodeFence`, `extractFirstJsonObject`, `sanitizeJsonCandidate`, `tryParseJson<T>`)
+- [x] `analyze/route.ts` → 4개 함수 추출 + `tryParseJson<AnalyzeAiResponse>` 제네릭 교체
+- [x] `explain/route.ts` → `stripFence()` 제거, `stripCodeFence` import 교체 (중복 제거)
+- [x] 유닛 테스트 작성 → 21개 통과
 
 #### 2E. 값 포맷팅 (패널 공유)
 
