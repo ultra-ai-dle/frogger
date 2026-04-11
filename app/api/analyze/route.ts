@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { AnalyzeMetadata, AnalyzeAiResponse, LinearPivotSpec, Panel } from "@/types/prova";
-import { inferGraphModeFromCode } from "@/lib/graphModeInference";
-import { enrichAnalyzeMetadataWithPartitionValuePivots } from "@/lib/partitionPivotEnrichment";
 import { normalizeAndDedupeTags } from "@/lib/tagNormalize";
 import { stripCodeFence, tryParseJson } from "@/lib/jsonParsing";
 import {
@@ -9,13 +7,16 @@ import {
   callWithFallback,
   GeminiOptions,
 } from "@/lib/ai-providers";
+import { inferGraphModeFromCode } from "@/lib/graphModeInference";
 import {
   ANALYZE_CODE_CHAR_LIMIT,
   ANALYZE_GEMINI_SCHEMA,
   compactCodeForAnalyze,
   compactVarTypes,
-} from "@/lib/analyzePrompt";
-import { normalizeResponse, fallbackAnalyzeMetadata } from "@/lib/analyzeNormalize";
+  normalizeResponse,
+  fallbackAnalyzeMetadata,
+  enrichAnalyzeMetadataWithPartitionValuePivots,
+} from "./_lib";
 
 function uniq(items: string[]) {
   return Array.from(new Set(items.filter(Boolean)));
