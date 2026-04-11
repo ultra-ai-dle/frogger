@@ -10,6 +10,8 @@ import {
   type LinearPointerMap
 } from "@/features/visualization/linearPointerHelpers";
 
+type SpecialKind = "HEAP" | "QUEUE" | "STACK" | "DEQUE" | "UNIONFIND" | "VISITED" | "DISTANCE" | "PARENT_TREE";
+
 type Props = {
   step: MergedTraceStep | null;
   graphVarName?: string;
@@ -21,6 +23,8 @@ type Props = {
   /** AI 분석: 선형 인덱스(투포인터 등) — 클라이언트는 이름 추측하지 않음 */
   linearPivots?: LinearPivotSpec[];
   linearContextVarNames?: string[];
+  /** AI가 판단한 변수별 특수 자료구조 뷰 종류 */
+  specialVarKinds?: Record<string, SpecialKind>;
   playbackControls?: {
     isPlaying: boolean;
     currentStep: number;
@@ -575,6 +579,601 @@ function canGraphLikeUseGridView(value: unknown): boolean {
   return value.every((row) => Array.isArray(row));
 }
 
+// ── HeapTreeView ──────────────────────────────────────────────────────────────
+
+const HEAP_NODE_R = 16;
+const HEAP_V_GAP = 54;
+
+function computeHeapPositions(n: number): Array<{ x: number; y: number }> {
+  const capped = Math.min(n, 63);
+  const maxLevel = Math.floor(Math.log2(Math.max(capped, 1)));
+  const leafCount = Math.pow(2, maxLevel);
+  const H_UNIT = 40;
+  const totalW = leafCount * H_UNIT;
+  const out: Array<{ x: number; y: number }> = [];
+  for (let i = 0; i < capped; i++) {
+    const level = Math.floor(Math.log2(i + 1));
+    const levelStart = Math.pow(2, level) - 1;
+    const posInLevel = i - levelStart;
+    const levelCount = Math.pow(2, level);
+    out.push({
+      x: ((posInLevel + 0.5) / levelCount) * totalW,
+      y: level * HEAP_V_GAP + HEAP_NODE_R + 8,
+    });
+  }
+  return out;
+}
+
+function HeapTreeView({
+  arr,
+  stepState,
+  bitmaskMode,
+  bitWidth,
+}: {
+  arr: unknown[];
+  stepState: GraphStepState;
+  bitmaskMode?: boolean;
+  bitWidth?: number;
+}) {
+  const capped = Math.min(arr.length, 63);
+  const positions = useMemo(() => computeHeapPositions(capped), [capped]);
+
+  if (positions.length === 0) return null;
+
+  const maxLevel = Math.floor(Math.log2(Math.max(capped, 1)));
+  const leafCount = Math.pow(2, maxLevel);
+  const svgW = Math.max(leafCount * 40, 80);
+  const svgH = (maxLevel + 1) * HEAP_V_GAP + HEAP_NODE_R + 24;
+
+  const getLabel = (v: unknown) => {
+    if (Array.isArray(v) && v.length >= 2) return `${v[0]},${v[1]}`;
+    return formatScalar(v, bitmaskMode, bitWidth);
+  };
+  const getNodeId = (v: unknown, i: number) => {
+    if (Array.isArray(v) && v.length >= 2) return toNodeId(v[1]) ?? String(i);
+    return toNodeId(v) ?? String(i);
+  };
+
+  return (
+    <div className="overflow-auto">
+      <svg width={svgW} height={svgH} style={{ minWidth: svgW, display: "block" }}>
+        {positions.map((pos, i) => {
+          if (i === 0) return null;
+          const pPos = positions[Math.floor((i - 1) / 2)];
+          return (
+            <line
+              key={`he-${i}`}
+              x1={pPos.x} y1={pPos.y}
+              x2={pos.x} y2={pos.y}
+              stroke="#2d4468" strokeWidth={1.5}
+            />
+          );
+        })}
+        {positions.map((pos, i) => {
+          const v = arr[i];
+          const nid = getNodeId(v, i);
+          const cur = stepState.currentNode === nid;
+          const frt = stepState.frontierNodes.has(nid);
+          const vis = stepState.visitedNodes.has(nid);
+          const fill = cur ? "#4a3512" : frt ? "#2f1f4f" : vis ? "#113a2b" : "#1b2b42";
+          const stroke = cur ? "#f2cc60" : frt ? "#b28cff" : vis ? "#58d68d" : "#85c2ff";
+          return (
+            <g key={`hn-${i}`} transform={`translate(${pos.x},${pos.y})`}>
+              <circle r={HEAP_NODE_R} fill={fill} stroke={stroke} strokeWidth={cur ? 2.8 : 1.8} />
+              <text textAnchor="middle" dominantBaseline="middle" fill="#e6edf3" fontSize={9} fontWeight={700} fontFamily="monospace">
+                {getLabel(v)}
+              </text>
+              <text y={HEAP_NODE_R + 10} textAnchor="middle" fill="#4a5568" fontSize={8} fontFamily="monospace">
+                [{i}]
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+      {arr.length > 63 && (
+        <div className="text-[10px] text-prova-muted mt-1">+{arr.length - 63} 노드 생략</div>
+      )}
+    </div>
+  );
+}
+
+// ── QueueView ────────────────────────────────────────────────────────────────
+
+function QueueView({
+  arr,
+  bitmaskMode,
+  bitWidth,
+}: {
+  arr: unknown[];
+  bitmaskMode?: boolean;
+  bitWidth?: number;
+}) {
+  const getLabel = (v: unknown) => {
+    if (Array.isArray(v)) return `[${(v as unknown[]).map((x) => formatScalar(x, bitmaskMode, bitWidth)).join(",")}]`;
+    return formatScalar(v, bitmaskMode, bitWidth);
+  };
+
+  return (
+    <div className="py-2 px-1 space-y-2">
+      {/* 파이프 몸통 */}
+      <div className="flex items-stretch overflow-auto">
+        {/* DEQUEUE 출구 (왼쪽) */}
+        <div className="flex flex-col items-center justify-center shrink-0 mr-1">
+          <div className="text-[8px] text-[#58d68d] font-mono font-bold mb-1">DEQUEUE</div>
+          <svg width={20} height={36} viewBox="0 0 20 36">
+            <path d="M16,18 L4,18 M8,10 L4,18 L8,26" stroke="#58d68d" strokeWidth={2} fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </div>
+        {/* 파이프 상단 라인 */}
+        <div className="flex flex-col justify-between">
+          <div className="h-[1px] bg-[#2d4f79] w-full" />
+          <div className="flex items-center gap-0">
+            {arr.length === 0 ? (
+              <div className="h-10 px-6 border-y border-[#2d4f79] bg-[#0a1520] text-[11px] text-prova-muted font-mono flex items-center">empty</div>
+            ) : arr.map((v, i) => {
+              const isFront = i === 0;
+              const isBack = i === arr.length - 1;
+              return (
+                <div key={i} className="flex flex-col items-center">
+                  <div
+                    className={`h-10 min-w-[38px] px-2 border-y border-r text-[11px] font-mono flex flex-col items-center justify-center gap-0.5
+                      ${isFront ? "border-[#58d68d] bg-[#091f14]" : isBack ? "border-[#b28cff] bg-[#110a22]" : "border-[#2d4f79] bg-[#0a1520]"}
+                      ${i === 0 ? "border-l" : ""}`}
+                  >
+                    <span className={`font-bold ${isFront ? "text-[#58d68d]" : isBack ? "text-[#b28cff]" : "text-[#c9d1d9]"}`}>
+                      {getLabel(v)}
+                    </span>
+                    {(isFront || isBack) && (
+                      <span className={`text-[7px] font-bold leading-none ${isFront ? "text-[#58d68d]/70" : "text-[#b28cff]/70"}`}>
+                        {isFront && isBack ? "FRONT=BACK" : isFront ? "FRONT" : "BACK"}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="h-[1px] bg-[#2d4f79] w-full" />
+        </div>
+        {/* ENQUEUE 입구 (오른쪽) */}
+        <div className="flex flex-col items-center justify-center shrink-0 ml-1">
+          <div className="text-[8px] text-[#b28cff] font-mono font-bold mb-1">ENQUEUE</div>
+          <svg width={20} height={36} viewBox="0 0 20 36">
+            <path d="M4,18 L16,18 M12,10 L16,18 L12,26" stroke="#b28cff" strokeWidth={2} fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </div>
+      </div>
+      {/* 인덱스 */}
+      {arr.length > 0 && (
+        <div className="flex pl-[28px] gap-0">
+          {arr.map((_, i) => (
+            <div key={i} className="min-w-[38px] text-center text-[9px] text-prova-muted font-mono">{i}</div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── UnionFindView ─────────────────────────────────────────────────────────────
+
+function buildUFForest(arr: unknown[]): { children: number[][]; roots: number[] } {
+  const n = arr.length;
+  const children: number[][] = Array.from({ length: n }, () => []);
+  const roots: number[] = [];
+  for (let i = 0; i < n; i++) {
+    const p = arr[i] as number;
+    if (p === i) roots.push(i);
+    else if (p >= 0 && p < n) children[p].push(i);
+  }
+  return { children, roots };
+}
+
+function layoutUFForest(roots: number[], children: number[][]): Map<number, { x: number; y: number }> {
+  const pos = new Map<number, { x: number; y: number }>();
+  const H = 44;
+  const V = 52;
+  let col = 0;
+
+  function place(node: number, depth: number) {
+    const kids = children[node];
+    if (kids.length === 0) {
+      pos.set(node, { x: col * H + H / 2, y: depth * V + 20 });
+      col++;
+      return;
+    }
+    const start = col;
+    for (const kid of kids) place(kid, depth + 1);
+    const end = col;
+    pos.set(node, { x: ((start + end) / 2) * H, y: depth * V + 20 });
+  }
+
+  for (const root of roots) {
+    place(root, 0);
+    col += 0.5;
+  }
+  return pos;
+}
+
+function UnionFindView({
+  arr,
+  stepState,
+}: {
+  arr: unknown[];
+  stepState: GraphStepState;
+}) {
+  const { children, roots } = useMemo(() => buildUFForest(arr), [arr]);
+  const positions = useMemo(() => layoutUFForest(roots, children), [roots, children]);
+
+  if (roots.length === 0) {
+    return <div className="text-[11px] text-prova-muted py-1">(빈 구조)</div>;
+  }
+
+  const NODE_R = 15;
+  let maxX = 0;
+  let maxY = 0;
+  positions.forEach(({ x, y }) => {
+    if (x > maxX) maxX = x;
+    if (y > maxY) maxY = y;
+  });
+  const svgW = Math.max(maxX + NODE_R + 20, 80);
+  const svgH = Math.max(maxY + NODE_R + 24, 60);
+
+  const edges: Array<{ from: number; to: number }> = [];
+  for (let i = 0; i < arr.length; i++) {
+    for (const child of children[i]) edges.push({ from: i, to: child });
+  }
+
+  return (
+    <div className="overflow-auto">
+      <svg width={svgW} height={svgH} style={{ minWidth: svgW, display: "block" }}>
+        {edges.map(({ from, to }) => {
+          const fp = positions.get(from);
+          const tp = positions.get(to);
+          if (!fp || !tp) return null;
+          return (
+            <line
+              key={`uf-e-${from}-${to}`}
+              x1={fp.x} y1={fp.y + NODE_R}
+              x2={tp.x} y2={tp.y - NODE_R}
+              stroke="#2d4468" strokeWidth={1.5}
+            />
+          );
+        })}
+        {Array.from(positions.entries()).map(([nodeId, p]) => {
+          const nid = String(nodeId);
+          const cur = stepState.currentNode === nid;
+          const frt = stepState.frontierNodes.has(nid);
+          const vis = stepState.visitedNodes.has(nid);
+          const isRoot = (arr[nodeId] as number) === nodeId;
+          const fill = cur ? "#4a3512" : frt ? "#2f1f4f" : vis ? "#113a2b" : "#1b2b42";
+          const stroke = cur ? "#f2cc60" : frt ? "#b28cff" : isRoot ? "#58a6ff" : "#85c2ff";
+          return (
+            <g key={`uf-n-${nodeId}`} transform={`translate(${p.x},${p.y})`}>
+              <circle r={NODE_R} fill={fill} stroke={stroke} strokeWidth={isRoot ? 2.5 : 1.8} />
+              <text textAnchor="middle" dominantBaseline="middle" fill="#e6edf3" fontSize={10} fontWeight={700} fontFamily="monospace">
+                {nodeId}
+              </text>
+              {isRoot && (
+                <text y={-NODE_R - 5} textAnchor="middle" fill="#58a6ff" fontSize={8} fontFamily="monospace">
+                  root
+                </text>
+              )}
+            </g>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
+// ── StackView ─────────────────────────────────────────────────────────────────
+
+function StackView({
+  arr,
+  bitmaskMode,
+  bitWidth,
+}: {
+  arr: unknown[];
+  bitmaskMode?: boolean;
+  bitWidth?: number;
+}) {
+  const getLabel = (v: unknown) => {
+    if (Array.isArray(v)) return `[${(v as unknown[]).map((x) => formatScalar(x, bitmaskMode, bitWidth)).join(",")}]`;
+    return formatScalar(v, bitmaskMode, bitWidth);
+  };
+
+  return (
+    <div className="py-2 px-1 inline-flex flex-col items-start gap-0">
+      {/* PUSH 화살표 (위) */}
+      <div className="flex items-center gap-2 mb-1 self-stretch justify-center">
+        <svg width={40} height={16} viewBox="0 0 40 16">
+          <path d="M20,2 L20,12 M15,8 L20,13 L25,8" stroke="#f2cc60" strokeWidth={1.8} fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        <span className="text-[8px] text-[#f2cc60] font-mono font-bold uppercase tracking-widest">PUSH</span>
+      </div>
+
+      {/* 스택 칸들 (top이 위) */}
+      <div className="flex flex-col-reverse items-stretch w-full border border-[#2d4f79] rounded overflow-hidden">
+        {arr.length === 0 ? (
+          <div className="h-10 flex items-center justify-center text-[11px] text-prova-muted font-mono">empty</div>
+        ) : arr.map((v, i) => {
+          const isTop = i === arr.length - 1;
+          return (
+            <div
+              key={i}
+              className={`flex items-center gap-3 px-3 h-9 border-b border-[#1e2d3d] last:border-b-0
+                ${isTop ? "bg-[#1e1700] border-l-2 border-l-[#f2cc60]" : "bg-[#0a1520]"}`}
+            >
+              <span className="text-[9px] text-[#4a5568] font-mono w-4 shrink-0">{i}</span>
+              <span className={`text-[12px] font-mono font-bold flex-1 ${isTop ? "text-[#f2cc60]" : "text-[#c9d1d9]"}`}>
+                {getLabel(v)}
+              </span>
+              {isTop && (
+                <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-[#f2cc60]/15 text-[#f2cc60] border border-[#f2cc60]/30 shrink-0">
+                  TOP
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 바닥 */}
+      <div className="self-stretch h-2 bg-[#1e2d3d] rounded-b border-x border-b border-[#2d4f79] flex items-center justify-center">
+        <div className="w-8 h-[2px] bg-[#2d4f79] rounded" />
+      </div>
+
+      {/* POP 화살표 (위) */}
+      <div className="flex items-center gap-2 mt-1 self-stretch justify-center">
+        <svg width={40} height={16} viewBox="0 0 40 16">
+          <path d="M20,14 L20,4 M15,8 L20,3 L25,8" stroke="#85c2ff" strokeWidth={1.8} fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        <span className="text-[8px] text-[#85c2ff] font-mono font-bold uppercase tracking-widest">POP</span>
+      </div>
+    </div>
+  );
+}
+
+// ── DequeView ─────────────────────────────────────────────────────────────────
+
+function DequeView({
+  arr,
+  bitmaskMode,
+  bitWidth,
+}: {
+  arr: unknown[];
+  bitmaskMode?: boolean;
+  bitWidth?: number;
+}) {
+  const getLabel = (v: unknown) => {
+    if (Array.isArray(v)) return `[${(v as unknown[]).map((x) => formatScalar(x, bitmaskMode, bitWidth)).join(",")}]`;
+    return formatScalar(v, bitmaskMode, bitWidth);
+  };
+
+  return (
+    <div className="py-2 px-1 space-y-1">
+      {/* appendleft / popleft */}
+      <div className="flex items-center gap-1 text-[8px] font-mono font-bold text-[#f2cc60] justify-start pl-1">
+        <svg width={28} height={12} viewBox="0 0 28 12">
+          <path d="M26,6 L4,6 M8,2 L3,6 L8,10" stroke="#f2cc60" strokeWidth={1.6} fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        <span>appendleft / popleft</span>
+      </div>
+
+      {/* 파이프 */}
+      <div className="flex items-stretch overflow-auto">
+        {/* 왼쪽 열린 끝 */}
+        <div className="flex items-center shrink-0">
+          <div className="w-[6px] h-10 border-t-2 border-b-2 border-l-2 border-[#f2cc60] rounded-l" />
+        </div>
+        {arr.length === 0 ? (
+          <div className="flex-1 h-10 border-t-2 border-b-2 border-[#2d4f79] flex items-center justify-center text-[11px] text-prova-muted font-mono">
+            empty
+          </div>
+        ) : arr.map((v, i) => {
+          const isLeft = i === 0;
+          const isRight = i === arr.length - 1;
+          return (
+            <div
+              key={i}
+              className={`flex flex-col items-center justify-center min-w-[38px] h-10 px-2 border-t-2 border-b-2 border-r
+                ${isLeft ? "border-l border-l-[#f2cc60] border-[#f2cc60] bg-[#1e1700]" :
+                  isRight ? "border-[#58a6ff] bg-[#091529]" :
+                  "border-[#2d4f79] bg-[#0a1520]"}
+              `}
+            >
+              <span className={`text-[11px] font-mono font-bold ${isLeft ? "text-[#f2cc60]" : isRight ? "text-[#58a6ff]" : "text-[#c9d1d9]"}`}>
+                {getLabel(v)}
+              </span>
+              <span className="text-[8px] text-[#4a5568] font-mono">{i}</span>
+            </div>
+          );
+        })}
+        {/* 오른쪽 열린 끝 */}
+        <div className="flex items-center shrink-0">
+          <div className="w-[6px] h-10 border-t-2 border-b-2 border-r-2 border-[#58a6ff] rounded-r" />
+        </div>
+      </div>
+
+      {/* append / pop */}
+      <div className="flex items-center gap-1 text-[8px] font-mono font-bold text-[#58a6ff] justify-end pr-1">
+        <span>append / pop</span>
+        <svg width={28} height={12} viewBox="0 0 28 12">
+          <path d="M2,6 L24,6 M20,2 L25,6 L20,10" stroke="#58a6ff" strokeWidth={1.6} fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+// ── VisitedView ───────────────────────────────────────────────────────────────
+
+function VisitedView({
+  arr,
+}: {
+  arr: unknown[];
+}) {
+  if (arr.length === 0) {
+    return <div className="text-[11px] text-prova-muted font-mono py-1">(비어있음)</div>;
+  }
+  return (
+    <div className="flex items-start gap-1 overflow-auto py-2 flex-wrap">
+      {arr.map((v, i) => {
+        const visited = v === true || v === 1 || v === "True";
+        return (
+          <div key={i} className="flex flex-col items-center gap-0.5">
+            <div className="text-[10px] text-prova-muted font-mono">{i}</div>
+            <div
+              className={`w-7 h-7 rounded border text-[10px] font-mono grid place-items-center ${
+                visited
+                  ? "border-[#58d68d] bg-[#0e2b1e] text-[#7ae2a8]"
+                  : "border-[#2a2f36] bg-[#0d1117] text-[#4a5568]"
+              }`}
+              title={visited ? "visited" : "not visited"}
+            >
+              {visited ? "✓" : "·"}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── DistanceView ──────────────────────────────────────────────────────────────
+
+const INF_THRESHOLD = 1e8;
+
+function DistanceView({
+  arr,
+  bitmaskMode,
+  bitWidth,
+}: {
+  arr: unknown[];
+  bitmaskMode?: boolean;
+  bitWidth?: number;
+}) {
+  if (arr.length === 0) {
+    return <div className="text-[11px] text-prova-muted font-mono py-1">(비어있음)</div>;
+  }
+  const finite = arr
+    .map((v) => (typeof v === "number" && isFinite(v) && v < INF_THRESHOLD ? v : null))
+    .filter((v): v is number => v !== null);
+  const minVal = finite.length > 0 ? Math.min(...finite) : 0;
+  const maxVal = finite.length > 0 ? Math.max(...finite) : 1;
+
+  return (
+    <div className="flex items-start gap-1 overflow-auto py-2">
+      {arr.map((v, i) => {
+        const n = typeof v === "number" ? v : null;
+        const isInf = n === null || !isFinite(n) || n >= INF_THRESHOLD;
+        const ratio = isInf ? 0 : maxVal === minVal ? 1 : (n! - minVal) / (maxVal - minVal);
+        const intensity = Math.round(ratio * 9) + 1;
+        const colorMap: Record<number, string> = {
+          1: "border-[#1a3a5c] bg-[#0a1e30] text-[#6baed6]",
+          2: "border-[#1e4570] bg-[#0c2438] text-[#74b8e0]",
+          3: "border-[#225080] bg-[#0e2a42] text-[#7dc2ea]",
+          4: "border-[#265b90] bg-[#10304c] text-[#88ccf3]",
+          5: "border-[#2a67a0] bg-[#123656] text-[#94d6fc]",
+          6: "border-[#2e72b0] bg-[#143c60] text-[#a0e0ff]",
+          7: "border-[#327ec0] bg-[#16426a] text-[#acebff]",
+          8: "border-[#3689d0] bg-[#184874] text-[#b8f5ff]",
+          9: "border-[#3a95e0] bg-[#1a4e7e] text-[#c4ffff]",
+          10: "border-[#3ea0f0] bg-[#1c5488] text-[#d0ffff]",
+        };
+        return (
+          <div key={i} className="flex flex-col items-center gap-0.5">
+            <div className="text-[10px] text-prova-muted font-mono">{i}</div>
+            <div
+              className={`min-w-[36px] h-8 px-1 rounded border text-[11px] font-mono grid place-items-center ${
+                isInf
+                  ? "border-[#3a3f47] bg-[#0d1117] text-[#4a5568]"
+                  : colorMap[intensity]
+              }`}
+            >
+              {isInf ? "INF" : formatScalar(v, bitmaskMode, bitWidth)}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── ParentTreeView (일반 트리) ────────────────────────────────────────────────
+
+function ParentTreeView({
+  arr,
+  stepState,
+}: {
+  arr: unknown[];
+  stepState: GraphStepState;
+}) {
+  // parent[i] = parent node of i. root: parent[i] === i or parent[i] === -1
+  const n = arr.length;
+  const children: number[][] = Array.from({ length: n }, () => []);
+  const roots: number[] = [];
+  for (let i = 0; i < n; i++) {
+    const p = arr[i];
+    const pi = typeof p === "number" ? Math.trunc(p) : -1;
+    if (pi === i || pi < 0 || pi >= n) roots.push(i);
+    else children[pi].push(i);
+  }
+
+  const positions = useMemo(() => layoutUFForest(roots, children), [roots, children]);
+
+  if (roots.length === 0) {
+    return <div className="text-[11px] text-prova-muted py-1">(빈 구조)</div>;
+  }
+
+  const NODE_R = 15;
+  let maxX = 0;
+  let maxY = 0;
+  positions.forEach(({ x, y }) => { if (x > maxX) maxX = x; if (y > maxY) maxY = y; });
+  const svgW = Math.max(maxX + NODE_R + 20, 80);
+  const svgH = Math.max(maxY + NODE_R + 24, 60);
+
+  const edges: Array<{ from: number; to: number }> = [];
+  for (let i = 0; i < n; i++) {
+    for (const child of children[i]) edges.push({ from: i, to: child });
+  }
+
+  return (
+    <div className="overflow-auto">
+      <svg width={svgW} height={svgH} style={{ minWidth: svgW, display: "block" }}>
+        {edges.map(({ from, to }) => {
+          const fp = positions.get(from);
+          const tp = positions.get(to);
+          if (!fp || !tp) return null;
+          return (
+            <line key={`pt-e-${from}-${to}`}
+              x1={fp.x} y1={fp.y + NODE_R} x2={tp.x} y2={tp.y - NODE_R}
+              stroke="#2d4468" strokeWidth={1.5}
+            />
+          );
+        })}
+        {Array.from(positions.entries()).map(([nodeId, p]) => {
+          const nid = String(nodeId);
+          const cur = stepState.currentNode === nid;
+          const frt = stepState.frontierNodes.has(nid);
+          const vis = stepState.visitedNodes.has(nid);
+          const isRoot = roots.includes(nodeId);
+          const fill = cur ? "#4a3512" : frt ? "#2f1f4f" : vis ? "#113a2b" : "#1b2b42";
+          const stroke = cur ? "#f2cc60" : frt ? "#b28cff" : isRoot ? "#58a6ff" : "#85c2ff";
+          return (
+            <g key={`pt-n-${nodeId}`} transform={`translate(${p.x},${p.y})`}>
+              <circle r={NODE_R} fill={fill} stroke={stroke} strokeWidth={isRoot ? 2.5 : 1.8} />
+              <text textAnchor="middle" dominantBaseline="middle" fill="#e6edf3" fontSize={10} fontWeight={700} fontFamily="monospace">{nodeId}</text>
+              {isRoot && <text y={-NODE_R - 5} textAnchor="middle" fill="#58a6ff" fontSize={8} fontFamily="monospace">root</text>}
+            </g>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
 function is3DBooleanStateGrid(value: unknown): value is unknown[][][] {
   if (!Array.isArray(value) || value.length === 0) return false;
   if (!value.every((row) => Array.isArray(row) && row.length > 0)) return false;
@@ -1025,6 +1624,8 @@ function GraphCanvas({
   );
 }
 
+const EMPTY_SPECIAL_VAR_KINDS: Record<string, SpecialKind> = {};
+
 export function GraphPanel({
   step,
   graphVarName,
@@ -1035,12 +1636,15 @@ export function GraphPanel({
   bitWidth = 1,
   linearPivots,
   linearContextVarNames,
+  specialVarKinds: specialVarKindsProp,
   playbackControls
 }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const positionRef = useRef<Map<string, { x: number; y: number; vx?: number; vy?: number }>>(new Map());
   const [array2DModeByVar, setArray2DModeByVar] = useState<Record<string, "GRID" | "GRAPH">>({});
   const stepState = useMemo(() => deriveGraphStepState(step?.vars ?? {}), [step]);
+  // specialVarKindsProp이 undefined일 때 매 렌더마다 새 {}를 만들지 않도록 안정화
+  const specialVarKinds = specialVarKindsProp ?? EMPTY_SPECIAL_VAR_KINDS;
 
   const parsed = useMemo(() => {
     if (!step) return null;
@@ -1079,28 +1683,31 @@ export function GraphPanel({
     const structures = Object.entries(vars)
       .filter(([key, value]) => key !== "step" && isRenderableStructure(value))
       .map(([key, value]) => {
-        const kind = isDirectionMapLike(key, value)
-          ? "OBJECT"
-          : isDirectionVectorListLike(value)
+        const special: SpecialKind | undefined = specialVarKinds[key];
+        const kind = special
+          ? special
+          : isDirectionMapLike(key, value)
             ? "OBJECT"
-          : isClearlyGridLike(value)
-            ? "ARRAY2D"
-          : looksLike2DScalarTableGrid(value)
-            ? "ARRAY2D"
-          : is2DRectangularCellGrid(value)
-            ? "ARRAY2D"
-          : detectGraphLike(value)
-            ? "GRAPHLIKE"
-            : is2DArray(value)
-            ? "ARRAY2D"
-            : is1DArray(value)
-              ? "ARRAY1D"
-              : "OBJECT";
-        return { key, value, kind: kind as "ARRAY2D" | "ARRAY1D" | "OBJECT" | "GRAPHLIKE" };
+            : isDirectionVectorListLike(value)
+              ? "OBJECT"
+            : isClearlyGridLike(value)
+              ? "ARRAY2D"
+            : looksLike2DScalarTableGrid(value)
+              ? "ARRAY2D"
+            : is2DRectangularCellGrid(value)
+              ? "ARRAY2D"
+            : detectGraphLike(value)
+              ? "GRAPHLIKE"
+              : is2DArray(value)
+              ? "ARRAY2D"
+              : is1DArray(value)
+                ? "ARRAY1D"
+                : "OBJECT";
+        return { key, value, kind: kind as "ARRAY2D" | "ARRAY1D" | "OBJECT" | "GRAPHLIKE" | SpecialKind };
       });
 
     return { graphKeys, structures };
-  }, [graphVarName, graphVarNames, step, traceSteps]);
+  }, [graphVarName, graphVarNames, step, traceSteps, specialVarKinds]);
 
   const maxArrayLenByVar = useMemo(() => {
     const out: Record<string, number> = {};
@@ -1118,10 +1725,11 @@ export function GraphPanel({
     if (!parsed) return;
     setArray2DModeByVar((prev) => {
       const next = { ...prev };
+      let dirty = false;
       parsed.structures.forEach(({ key, kind, value }) => {
         if (kind !== "ARRAY2D" && kind !== "GRAPHLIKE") return;
         if (kind === "GRAPHLIKE" && !canGraphLikeUseGridView(value)) {
-          next[key] = "GRAPH";
+          if (next[key] !== "GRAPH") { next[key] = "GRAPH"; dirty = true; }
           return;
         }
         if (!next[key]) {
@@ -1129,10 +1737,12 @@ export function GraphPanel({
             looksLike2DScalarTableGrid(value) ||
             isClearlyGridLike(value) ||
             is2DRectangularCellGrid(value);
-          next[key] = parsed.graphKeys.has(key) && !preferGridView ? "GRAPH" : "GRID";
+          const mode = parsed.graphKeys.has(key) && !preferGridView ? "GRAPH" : "GRID";
+          next[key] = mode;
+          dirty = true;
         }
       });
-      return next;
+      return dirty ? next : prev;
     });
   }, [parsed]);
 
@@ -1158,6 +1768,8 @@ export function GraphPanel({
         {/* Structure regions */}
         <div className="space-y-2">
           {parsed.structures.map((structure) => {
+            const SPECIAL_KINDS: ReadonlySet<string> = new Set(["HEAP","QUEUE","STACK","DEQUE","UNIONFIND","VISITED","DISTANCE","PARENT_TREE"]);
+            const isSpecial = SPECIAL_KINDS.has(structure.kind);
             const promoted3D =
               bitmaskMode && is2DBitmaskGrid(structure.value)
                 ? expand2DBitmaskGridTo3D(
@@ -1170,7 +1782,7 @@ export function GraphPanel({
               !!promoted3D ||
               isDirectionVectorListLike(structure.value);
             const canToggleGraphGrid =
-              structure.kind === "GRAPHLIKE" && canGraphLikeUseGridView(structure.value) && !lockGridOnly;
+              !isSpecial && structure.kind === "GRAPHLIKE" && canGraphLikeUseGridView(structure.value) && !lockGridOnly;
             const preferGridDefault =
               looksLike2DScalarTableGrid(structure.value) ||
               isClearlyGridLike(structure.value) ||
@@ -1182,10 +1794,24 @@ export function GraphPanel({
               : !canToggleGraphGrid && structure.kind === "GRAPHLIKE"
               ? "GRAPH"
               : (array2DModeByVar[structure.key] ?? default2dMode);
+
+            const SPECIAL_BADGE_MAP: Partial<Record<string, string>> = {
+              HEAP: "HEAP", QUEUE: "QUEUE", STACK: "STACK", DEQUE: "DEQUE",
+              UNIONFIND: "UNION-FIND", VISITED: "VISITED", DISTANCE: "DIST", PARENT_TREE: "TREE",
+            };
+            const specialBadge = SPECIAL_BADGE_MAP[structure.kind] ?? null;
+
             return (
             <div key={structure.key} className="rounded border border-prova-line bg-[#0f141a] p-2">
               <div className="flex items-center justify-between mb-2">
-                <div className="text-[10px] text-[#9ac7ff] uppercase tracking-widest">{structure.key}</div>
+                <div className="flex items-center gap-2">
+                  <div className="text-[10px] text-[#9ac7ff] uppercase tracking-widest">{structure.key}</div>
+                  {specialBadge && (
+                    <span className="text-[8px] font-bold px-1.5 py-[2px] rounded border border-[#58a6ff]/30 bg-[#0c1f35] text-[#58a6ff] uppercase tracking-wider">
+                      {specialBadge}
+                    </span>
+                  )}
+                </div>
                 {canToggleGraphGrid && (
                   <div className="inline-flex items-center rounded border border-prova-line overflow-hidden text-[10px] font-mono">
                     <button
@@ -1203,7 +1829,28 @@ export function GraphPanel({
                   </div>
                 )}
               </div>
-              {(structure.kind === "ARRAY2D" || structure.kind === "GRAPHLIKE") && resolvedMode === "GRAPH" ? (
+              {structure.kind === "HEAP" ? (
+                <HeapTreeView
+                  arr={structure.value as unknown[]}
+                  stepState={stepState}
+                  bitmaskMode={bitmaskMode}
+                  bitWidth={bitWidth}
+                />
+              ) : structure.kind === "QUEUE" ? (
+                <QueueView arr={structure.value as unknown[]} bitmaskMode={bitmaskMode} bitWidth={bitWidth} />
+              ) : structure.kind === "STACK" ? (
+                <StackView arr={structure.value as unknown[]} bitmaskMode={bitmaskMode} bitWidth={bitWidth} />
+              ) : structure.kind === "DEQUE" ? (
+                <DequeView arr={structure.value as unknown[]} bitmaskMode={bitmaskMode} bitWidth={bitWidth} />
+              ) : structure.kind === "UNIONFIND" ? (
+                <UnionFindView arr={structure.value as unknown[]} stepState={stepState} />
+              ) : structure.kind === "VISITED" ? (
+                <VisitedView arr={structure.value as unknown[]} />
+              ) : structure.kind === "DISTANCE" ? (
+                <DistanceView arr={structure.value as unknown[]} bitmaskMode={bitmaskMode} bitWidth={bitWidth} />
+              ) : structure.kind === "PARENT_TREE" ? (
+                <ParentTreeView arr={structure.value as unknown[]} stepState={stepState} />
+              ) : (structure.kind === "ARRAY2D" || structure.kind === "GRAPHLIKE") && resolvedMode === "GRAPH" ? (
                 <GraphCanvas
                   graphKey={structure.key}
                   graph={buildGraphFromValue(structure.value)}
