@@ -184,12 +184,13 @@ it('GridLinearPanel은 step이 null일 때 플레이스홀더를 보여준다');
 
 #### 3C. 커스텀 훅 (page.tsx에서 분리)
 
-- [ ] `src/hooks/useKeyboardNavigation.ts` — 키보드 단축키 useEffect 추출
-- [ ] `src/hooks/usePlaybackTimer.ts` — 재생 타이머 useEffect 추출
-- [ ] `src/hooks/useDragResize.ts` — 패널 드래그 useEffect 추출
-- [ ] `src/hooks/useProvaExecution.ts` — 실행 파이프라인 (sanitize → analyze → explain) 추출
-- [ ] `npm run build` 통과 확인
-- [ ] 드래그/재생/키보드/실행 수동 QA
+- [x] `src/hooks/useKeyboardNavigation.ts` — 키보드 단축키 useEffect 추출
+- [x] `src/hooks/usePlaybackTimer.ts` — 재생 타이머 useEffect + playTimer ref 추출
+- [x] `src/hooks/useDragResize.ts` — 패널 드래그 useEffect + 5개 ref + 상수 추출, ref를 반환하여 JSX에 연결
+- [ ] `src/hooks/useProvaExecution.ts` — 실행 파이프라인 (sanitize → analyze → explain) 추출 (별도 지시 대기)
+- [x] `npm run build` 통과 확인 (3개 훅 각각)
+- [x] 키보드/재생/드래그 수동 QA
+- [ ] 실행 수동 QA
 
 ### Phase 4: API / 서비스 레이어 분리 (4순위)
 

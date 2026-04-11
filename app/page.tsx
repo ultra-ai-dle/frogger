@@ -23,6 +23,9 @@ import {
 } from "@/lib/traceSanitize";
 import { maxNumericAbs, formatWithBitMode } from "@/lib/formatValue";
 import { lineFromOffset, stableStringifyObject, detectIndentSize, convertIndent } from "@/lib/textUtils";
+import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation";
+import { usePlaybackTimer } from "@/hooks/usePlaybackTimer";
+import { useDragResize } from "@/hooks/useDragResize";
 
 /* ── Helpers ─────────────────────────────────────────────── */
 function runButtonLabel(
@@ -100,27 +103,11 @@ export default function Page() {
   const analyzeInFlightRef = useRef<Map<string, Promise<AnalyzeMetadata>>>(
     new Map(),
   );
-  const playTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const editorRef = useRef<HTMLTextAreaElement | null>(null);
   const editorHighlightRef = useRef<HTMLDivElement | null>(null);
   const codeRef = useRef(code);
-  const splitRootRef = useRef<HTMLDivElement | null>(null);
-  const rightPaneRef = useRef<HTMLDivElement | null>(null);
-  const dragTypeRef = useRef<
-    "left" | "right" | "var-input" | "input-output" | "calltree" | null
-  >(null);
-  const dragAnchorRef = useRef<{
-    leftCenterTotal: number;
-    leftWidth: number;
-  } | null>(null);
-  const callTreeDragAnchorRef = useRef<{
-    startX: number;
-    startWidth: number;
-  } | null>(null);
   const [callTreeWidth, setCallTreeWidth] = useState(208);
   const [callTreeOpen, setCallTreeOpen] = useState(true);
-  const CALLTREE_MIN = 140;
-  const CALLTREE_MAX = 400;
   const [paneWidths, setPaneWidths] = useState({
     left: 34,
     center: 38,
@@ -133,6 +120,15 @@ export default function Page() {
   });
   const [editCursorLine, setEditCursorLine] = useState(1);
   const [bitmaskMode, setBitmaskMode] = useState(false);
+  const {
+    splitRootRef,
+    rightPaneRef,
+    dragTypeRef,
+    dragAnchorRef,
+    callTreeDragAnchorRef,
+    CALLTREE_MIN,
+    CALLTREE_MAX,
+  } = useDragResize({ setPaneWidths, setRightHeights, setCallTreeWidth, setCallTreeOpen });
 
   const {
     pyodideStatus,
@@ -274,119 +270,6 @@ export default function Page() {
   useEffect(() => {
     setBitmaskMode(shouldShowBitToggle);
   }, [shouldShowBitToggle]);
-
-  useEffect(() => {
-    const onMouseMove = (e: MouseEvent) => {
-      if (!dragTypeRef.current || !splitRootRef.current) return;
-
-      if (dragTypeRef.current === "calltree") {
-        const anchor = callTreeDragAnchorRef.current;
-        if (!anchor) return;
-        const dx = e.clientX - anchor.startX;
-        const raw = anchor.startWidth + dx;
-        const next = Math.max(CALLTREE_MIN, Math.min(CALLTREE_MAX, raw));
-        setCallTreeWidth(next);
-        return;
-      }
-
-      if (
-        (dragTypeRef.current === "var-input" ||
-          dragTypeRef.current === "input-output") &&
-        rightPaneRef.current
-      ) {
-        const rect = rightPaneRef.current.getBoundingClientRect();
-        const minPct = (140 / Math.max(rect.height, 1)) * 100;
-        const yPct = ((e.clientY - rect.top) / Math.max(rect.height, 1)) * 100;
-
-        setRightHeights((prev) => {
-          if (dragTypeRef.current === "var-input") {
-            const total = prev.variable + prev.input;
-            const nextVariable = Math.min(
-              Math.max(yPct, minPct),
-              total - minPct,
-            );
-            return {
-              ...prev,
-              variable: nextVariable,
-              input: total - nextVariable,
-            };
-          }
-          const total = prev.input + prev.output;
-          const inputFromTop = yPct - prev.variable;
-          const nextInput = Math.min(
-            Math.max(inputFromTop, minPct),
-            total - minPct,
-          );
-          return {
-            ...prev,
-            input: nextInput,
-            output: total - nextInput,
-          };
-        });
-        return;
-      }
-
-      const rect = splitRootRef.current.getBoundingClientRect();
-      const minPct = (280 / Math.max(rect.width, 1)) * 100;
-      const xPct = ((e.clientX - rect.left) / Math.max(rect.width, 1)) * 100;
-
-      setPaneWidths((prev) => {
-        if (dragTypeRef.current === "left") {
-          const total =
-            dragAnchorRef.current?.leftCenterTotal ?? prev.left + prev.center;
-          const nextLeft = Math.min(Math.max(xPct, minPct), total - minPct);
-          return {
-            ...prev,
-            left: nextLeft,
-            center: total - nextLeft,
-          };
-        }
-        const leftWidth = dragAnchorRef.current?.leftWidth ?? prev.left;
-        const total = 100 - leftWidth;
-        const centerFromLeft = xPct - leftWidth;
-        const nextCenter = Math.min(
-          Math.max(centerFromLeft, minPct),
-          total - minPct,
-        );
-        return {
-          ...prev,
-          left: leftWidth,
-          center: nextCenter,
-          right: total - nextCenter,
-        };
-      });
-    };
-
-    const onMouseUp = (e: MouseEvent) => {
-      if (dragTypeRef.current === "calltree") {
-        const anchor = callTreeDragAnchorRef.current;
-        if (anchor) {
-          const dx = e.clientX - anchor.startX;
-          const raw = anchor.startWidth + dx;
-          if (raw < CALLTREE_MIN / 2) {
-            setCallTreeOpen(true);
-          } else {
-            setCallTreeOpen(true);
-            setCallTreeWidth(
-              Math.max(CALLTREE_MIN, Math.min(CALLTREE_MAX, raw)),
-            );
-          }
-        }
-      }
-      dragTypeRef.current = null;
-      dragAnchorRef.current = null;
-      callTreeDragAnchorRef.current = null;
-      document.body.style.cursor = "";
-      document.body.style.userSelect = "";
-    };
-
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup", onMouseUp);
-    return () => {
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", onMouseUp);
-    };
-  }, []);
 
   useEffect(() => {
     codeRef.current = code;
@@ -657,77 +540,23 @@ export default function Page() {
     stdin,
   ]);
 
-  useEffect(() => {
-    if (!playback.isPlaying) {
-      if (playTimer.current) clearInterval(playTimer.current);
-      playTimer.current = null;
-      return;
-    }
-    if (playTimer.current) clearInterval(playTimer.current);
-    playTimer.current = setInterval(
-      () => {
-        const next = playback.currentStep + 1;
-        if (next >= mergedTrace.length) {
-          setPlaying(false);
-          return;
-        }
-        if (mergedTrace[next]?.runtimeError) {
-          setCurrentStep(next);
-          setPlaying(false);
-          setUiMode("errorStep");
-          return;
-        }
-        setCurrentStep(next);
-      },
-      Math.max(300, 900 / playback.playbackSpeed),
-    );
-    return () => {
-      if (playTimer.current) clearInterval(playTimer.current);
-    };
-  }, [
+  usePlaybackTimer({
+    currentStep: playback.currentStep,
+    isPlaying: playback.isPlaying,
+    playbackSpeed: playback.playbackSpeed,
     mergedTrace,
-    playback.currentStep,
-    playback.isPlaying,
-    playback.playbackSpeed,
     setCurrentStep,
     setPlaying,
     setUiMode,
-  ]);
+  });
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      const activeEl = document.activeElement as HTMLElement | null;
-      const isThreeNavContext = !!activeEl?.closest?.(
-        "[data-prova-3d-nav='true']",
-      );
-      if (isThreeNavContext) return;
-
-      const target = e.target as HTMLElement | null;
-      const isTypingContext =
-        !!target &&
-        (target.tagName === "TEXTAREA" ||
-          target.tagName === "INPUT" ||
-          target.isContentEditable);
-      if (isTypingContext) return;
-
-      if (e.key === "ArrowLeft") setCurrentStep(playback.currentStep - 1);
-      if (e.key === "ArrowRight") setCurrentStep(playback.currentStep + 1);
-      if (e.key === " ") {
-        e.preventDefault();
-        setPlaying(!playback.isPlaying);
-      }
-      if (e.key === "Home") setCurrentStep(0);
-      if (e.key === "End") setCurrentStep(mergedTrace.length - 1);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [
-    mergedTrace.length,
-    playback.currentStep,
-    playback.isPlaying,
+  useKeyboardNavigation({
+    currentStep: playback.currentStep,
+    isPlaying: playback.isPlaying,
+    traceLength: mergedTrace.length,
     setCurrentStep,
     setPlaying,
-  ]);
+  });
 
   const headerBadge = useMemo(() => {
     if (isRunning)
