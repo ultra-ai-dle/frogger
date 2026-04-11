@@ -196,7 +196,7 @@ it('GridLinearPanel은 step이 null일 때 플레이스홀더를 보여준다');
 
 #### 4A. 타입 이동
 
-- [ ] `AnalyzeAiResponse` 타입 → `analyze/route.ts`(L12-50)에서 `src/types/prova.ts`로 이동
+- [x] `AnalyzeAiResponse` + `Panel` + `Strategy` 타입 → `src/types/prova.ts`로 이동, `analyze/route.ts`에서 import 교체
 
 #### 4B. Analyze 분해
 

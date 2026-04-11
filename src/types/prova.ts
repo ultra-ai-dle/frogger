@@ -112,3 +112,43 @@ export interface PlaybackState {
   isPlaying: boolean;
   playbackSpeed: number;
 }
+
+export type Panel = "GRID" | "LINEAR" | "GRAPH" | "VARIABLES";
+export type Strategy = "GRID" | "LINEAR" | "GRID_LINEAR" | "GRAPH";
+
+export type AnalyzeAiResponse = {
+  algorithm: string;
+  display_name: string;
+  strategy: Strategy;
+  tags: string[];
+  detected_data_structures?: string[];
+  detected_algorithms?: string[];
+  summary?: string;
+  graph_mode?: "directed" | "undirected";
+  graph_var_name?: string;
+  graph_representation?: "GRID" | "MAP";
+  uses_bitmasking?: boolean;
+  time_complexity?: string;
+  key_vars: string[];
+  var_mapping?: Record<string, { var_name: string; panel: Panel }>;
+  var_mapping_list?: Array<{ role: string; var_name: string; panel: Panel }>;
+  linear_pivots?: Array<{
+    var_name: string;
+    badge?: string;
+    indexes_1d_var?: string;
+    pivot_mode?: "index" | "value_in_array";
+  }>;
+  linear_context_var_names?: string[];
+  /** 변수명 → 특수 자료구조 뷰 종류 — 코드 맥락으로만 판별, 이름 무관 */
+  special_var_kinds?: Record<
+    string,
+    | "HEAP"
+    | "QUEUE"
+    | "STACK"
+    | "DEQUE"
+    | "UNIONFIND"
+    | "VISITED"
+    | "DISTANCE"
+    | "PARENT_TREE"
+  >;
+};
