@@ -53,12 +53,28 @@
 
 ## TODO 체크리스트
 
+### 테스트 컨벤션 (`.claude/commands/test.md` 준수)
+
+테스트 메시지는 한글로 작성하며, 아래 형식을 따른다:
+
+- 정상: `[함수명]는 [조건]일 때 [결과]를 반환한다`
+- 예외: `[함수명]는 [조건]인 경우 [예외]를 던진다`
+- 빈 값: `[함수명]는 [빈 입력]일 때 [기본값]을 반환한다`
+- UI: `[컴포넌트]는 [조건]일 때 [UI 변화]를 보여준다`
+
+```typescript
+// 예시
+it('mergeTrace는 annotated가 짧을 때 EMPTY_ANNOTATED로 패딩한다')
+it('stripCodeFence는 마크다운 코드 블록을 제거한다')
+it('GridLinearPanel은 step이 null일 때 플레이스홀더를 보여준다')
+```
+
 ### Phase 0: 테스트 환경 세팅
 
-- [ ] Vitest + @testing-library/react 설치 및 설정
-- [ ] `vitest.config.ts` 생성 (tsconfig paths 매핑)
-- [ ] `npm run test` 스크립트 추가
-- [ ] `npm run build` 통과 확인 (baseline)
+- [x] Vitest + @testing-library/react 설치 및 설정
+- [x] `vitest.config.ts` 생성 (tsconfig paths 매핑)
+- [x] `npm run test` 스크립트 추가
+- [x] `npm run build` 통과 확인 (baseline)
 
 ### Phase 1: 인라인 SVG 분리 (1순위 — 영향 범위 최소)
 
