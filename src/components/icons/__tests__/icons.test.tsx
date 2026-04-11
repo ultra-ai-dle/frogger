@@ -12,7 +12,7 @@ import {
   ResetViewIcon,
   ClearActiveIcon,
   GridIcon,
-  IconTarget,
+  IconBug,
 } from "../index";
 
 const icons = [
@@ -26,7 +26,7 @@ const icons = [
   ["ResetViewIcon", ResetViewIcon],
   ["ClearActiveIcon", ClearActiveIcon],
   ["GridIcon", GridIcon],
-  ["IconTarget", IconTarget],
+  ["IconBug", IconBug],
 ] as const;
 
 describe("icons", () => {

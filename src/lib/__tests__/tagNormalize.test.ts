@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { normalizeTagKebab, normalizeAndDedupeTags } from "./tagNormalize";
+import { normalizeTagKebab, normalizeAndDedupeTags } from "../tagNormalize";
 
 describe("normalizeTagKebab", () => {
   it("normalizeTagKebab는 공백이 포함된 태그를 kebab-case로 변환한다", () => {

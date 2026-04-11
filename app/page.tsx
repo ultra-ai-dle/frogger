@@ -18,6 +18,7 @@ import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation";
 import { usePlaybackTimer } from "@/hooks/usePlaybackTimer";
 import { useDragResize } from "@/hooks/useDragResize";
 import { useProvaExecution } from "@/hooks/useProvaExecution";
+import { TimelineControls } from "@/features/playback/TimelineControls";
 
 /* ── Helpers ─────────────────────────────────────────────── */
 function runButtonLabel(
@@ -997,86 +998,16 @@ export default function Page() {
             style={{ width: `${paneWidths.right}%` }}
           >
             {/* Debug controls */}
-            <div className="shrink-0 border-b border-prova-line bg-[#0f141a] px-3 py-2 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] text-prova-muted uppercase tracking-widest font-medium">
-                  Debug Controls
-                </span>
-                <span className="text-[10px] text-prova-muted font-mono">
-                  Step {mergedTrace.length > 0 ? playback.currentStep + 1 : 0} /{" "}
-                  {mergedTrace.length}
-                </span>
-              </div>
-              <input
-                type="range"
-                min={0}
-                max={Math.max(mergedTrace.length - 1, 0)}
-                value={Math.min(
-                  playback.currentStep,
-                  Math.max(mergedTrace.length - 1, 0),
-                )}
-                onChange={(e) => setCurrentStep(Number(e.target.value))}
-                disabled={isRunning || mergedTrace.length === 0}
-                className="w-full accent-[#58a6ff] disabled:opacity-40"
-              />
-              <div className="flex items-center gap-2">
-                <button
-                  className="h-7 px-2 flex items-center justify-center rounded border border-prova-line bg-prova-panel text-prova-muted hover:text-white disabled:opacity-30 text-[10px] font-mono"
-                  onClick={() => setCurrentStep(playback.currentStep - 1)}
-                  disabled={
-                    isRunning ||
-                    mergedTrace.length === 0 ||
-                    playback.currentStep === 0
-                  }
-                  aria-label="Previous step"
-                >
-                  Prev
-                </button>
-                <button
-                  className="h-7 px-2 flex items-center justify-center rounded border border-prova-line bg-prova-panel text-prova-muted hover:text-white disabled:opacity-30 text-[10px] font-mono"
-                  onClick={() => setPlaying(!playback.isPlaying)}
-                  disabled={isRunning || mergedTrace.length === 0}
-                  aria-label={playback.isPlaying ? "Pause" : "Play"}
-                >
-                  {playback.isPlaying ? "Pause" : "Play"}
-                </button>
-                <button
-                  className={`h-7 px-2 flex items-center justify-center rounded border transition-colors text-[10px] font-mono ${
-                    isRunning ||
-                    mergedTrace.length === 0 ||
-                    playback.currentStep >= mergedTrace.length - 1
-                      ? "border-prova-line bg-[#161b22] text-prova-muted opacity-30 cursor-not-allowed"
-                      : "border-prova-green/45 bg-[#12301f] text-prova-green hover:bg-[#184329] hover:text-[#7ee787]"
-                  }`}
-                  onClick={() => setCurrentStep(playback.currentStep + 1)}
-                  disabled={
-                    isRunning ||
-                    mergedTrace.length === 0 ||
-                    playback.currentStep >= mergedTrace.length - 1
-                  }
-                  aria-label="Next step"
-                >
-                  Next
-                </button>
-                <div className="ml-auto flex items-center gap-1">
-                  <span className="text-[10px] text-prova-muted">Speed</span>
-                  <select
-                    className="h-7 rounded border border-prova-line bg-[#161b22] text-[10px] text-[#c9d1d9] px-1 focus:outline-none disabled:opacity-40"
-                    value={playback.playbackSpeed}
-                    onChange={(e) => setSpeed(Number(e.target.value))}
-                    disabled={isRunning || mergedTrace.length === 0}
-                  >
-                    <option value={0.5}>×0.5</option>
-                    <option value={1}>×1</option>
-                    <option value={1.5}>×1.5</option>
-                    <option value={2}>×2</option>
-                    <option value={10}>×10</option>
-                    <option value={20}>×20</option>
-                    <option value={100}>×100</option>
-                  </select>
-                </div>
-              </div>
-            </div>
+            <TimelineControls
+              steps={mergedTrace}
+              currentStep={playback.currentStep}
+              isRunning={isRunning}
+              isPlaying={playback.isPlaying}
+              speed={playback.playbackSpeed}
+              onStepChange={setCurrentStep}
+              onTogglePlay={() => setPlaying(!playback.isPlaying)}
+              onSpeedChange={setSpeed}
+            />
 
             <div className="flex-1 min-h-0 flex flex-col">
               {/* Variable group */}

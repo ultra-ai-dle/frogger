@@ -208,10 +208,16 @@ it('GridLinearPanel은 step이 null일 때 플레이스홀더를 보여준다');
 - [x] `analyze/route.ts` → 187줄 (analyzeWithAi + POST 핸들러만 남음, 목표 ~200줄 달성)
 - [x] `npm run build` 통과 확인
 
+### 구조 정리 (검토 후 추가)
+
+- [x] `tagNormalize.test.ts` → `src/lib/__tests__/`로 이동
+- [x] `TimelineControls.tsx` — page.tsx 인라인 타임라인 UI 추출로 교체 + 에러 점프 버튼 복원
+- [ ] 도트 타임라인 vs 슬라이더 토글 기능 추가 (QA + 이름 변경 완료 후)
+
 ### Phase 5: QA
 
 - [ ] `docs/qa/` 기준 시나리오별 수동 테스트 (execution, visualization, playback, trace, ai-pipeline)
-- [ ] 전체 파이프라인 E2E 확인: 코드 입력 → 실행 → AI 분석 → 시각화 → 재생
+- [x] 전체 파이프라인 E2E 확인: 코드 입력 → 실행 → AI 분석 → 시각화 → 재생
 
 ---
 

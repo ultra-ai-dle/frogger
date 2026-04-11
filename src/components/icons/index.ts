@@ -2,4 +2,4 @@ export { IconFiles, IconSettings, IconRefresh, IconExpand, IconWarning, IconPenc
 export { IconExpand as ExpandIcon } from "./AppIcons";
 export { CollapseIcon, ResetViewIcon, ClearActiveIcon } from "./PanelIcons";
 export { GridIcon } from "./GridIcons";
-export { IconTarget } from "./TimelineIcons";
+export { IconBug } from "./TimelineIcons";
