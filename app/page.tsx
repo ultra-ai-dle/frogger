@@ -9,6 +9,8 @@ import { AnalyzeMetadata } from "@/types/prova";
 import { useProvaStore } from "@/store/useProvaStore";
 import { resolveGraphMode } from "@/lib/graphModeInference";
 import { normalizeAndDedupeTags } from "@/lib/tagNormalize";
+import { GuidedTour } from "@/features/tour/GuidedTour";
+import { useTourStore } from "@/features/tour/useTourStore";
 import { IconFiles, IconSettings, IconRefresh, IconExpand, IconWarning, IconPencil } from "@/components/icons";
 import { detectLanguageFromCode } from "@/lib/languageDetection";
 import { highlightJsLine, highlightPythonLine } from "@/lib/syntaxHighlight";
@@ -19,6 +21,7 @@ import { usePlaybackTimer } from "@/hooks/usePlaybackTimer";
 import { useDragResize } from "@/hooks/useDragResize";
 import { useProvaExecution } from "@/hooks/useProvaExecution";
 import { TimelineControls } from "@/features/playback/TimelineControls";
+import { DebugCodeEditor } from "@/components/DebugCodeEditor";
 
 /* ── Helpers ─────────────────────────────────────────────── */
 function runButtonLabel(
@@ -390,7 +393,7 @@ export default function Page() {
       )}
 
       {/* ── Header ──────────────────────────────────────────── */}
-      <header className="shrink-0 h-11 bg-[#161b22] border-b border-prova-line flex items-center px-3 gap-4">
+      <header data-tour="header" className="shrink-0 h-11 bg-[#161b22] border-b border-prova-line flex items-center px-3 gap-4">
         {/* Logo */}
         <div className="font-bold text-[15px] tracking-tight shrink-0">
           Pro<span className="text-prova-green">va</span>
@@ -409,8 +412,9 @@ export default function Page() {
 
         <button
           className="w-7 h-7 flex items-center justify-center rounded text-prova-muted hover:text-[#c9d1d9] hover:bg-[#21262d] transition-colors shrink-0"
-          aria-label="설정"
-          title="설정"
+          aria-label="가이드 투어 다시보기"
+          title="가이드 투어 다시보기"
+          onClick={() => useTourStore.getState().startTour()}
         >
           <IconSettings />
         </button>
@@ -422,6 +426,7 @@ export default function Page() {
         <div ref={splitRootRef} className="flex-1 flex min-h-0 min-w-0">
           {/* ── Code Editor ───────────────────────────── */}
           <section
+            data-tour="editor"
             className="min-h-0 flex flex-col min-w-0"
             style={{ width: `${paneWidths.left}%` }}
           >
@@ -451,6 +456,7 @@ export default function Page() {
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <select
+                  data-tour="language"
                   className="h-7 rounded border border-prova-line bg-[#161b22] text-[11px] text-[#c9d1d9] px-2 focus:outline-none"
                   value={language}
                   onChange={(e) => setLanguage(e.target.value)}
@@ -709,54 +715,18 @@ export default function Page() {
                   />
                 </div>
               ) : (
-                <div
-                  className={`box-border h-full p-3 prova-scrollbar ${wordWrap ? "overflow-y-auto overflow-x-hidden" : "overflow-auto"}`}
-                >
-                  {code.split("\n").map((line, index) => {
-                    const lineNo = index + 1;
-                    const active = currentStep?.line === lineNo;
-                    const error = active && currentStep?.runtimeError;
-                    return (
-                      <div
-                        key={lineNo}
-                        className={`flex font-mono text-[12px] leading-5 transition-colors ${
-                          error
-                            ? "bg-[#3d0b0b] border-l-2 border-prova-red"
-                            : active
-                              ? "bg-[#2d3748]/60 border-l-2 border-[#58a6ff]"
-                              : "border-l-2 border-transparent"
-                        }`}
-                      >
-                        <span
-                          className={`w-9 shrink-0 text-right pr-3 select-none text-[11px] leading-5 ${
-                            active
-                              ? error
-                                ? "text-prova-red"
-                                : "text-[#58a6ff]"
-                              : "text-[#4a5568]"
-                          }`}
-                        >
-                          {lineNo}
-                        </span>
-                        <span
-                          className={`pl-2 ${wordWrap ? "whitespace-pre-wrap break-all" : "whitespace-pre"} ${active && !error ? "text-white" : ""}`}
-                          style={{ tabSize }}
-                        >
-                          {(language === "javascript"
-                            ? highlightJsLine
-                            : highlightPythonLine)(line).map((token, idx) => (
-                            <span
-                              key={`${lineNo}-${idx}`}
-                              className={token.className}
-                            >
-                              {token.text}
-                            </span>
-                          ))}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
+                <DebugCodeEditor
+                  code={code}
+                  language={normalizedLanguage}
+                  wordWrap={wordWrap}
+                  tabSize={tabSize}
+                  mergedTrace={mergedTrace}
+                  currentStepIndex={playback.currentStep}
+                  currentStep={currentStep}
+                  setCurrentStep={setCurrentStep}
+                  setPlaying={setPlaying}
+                  isRunning={isRunning}
+                />
               )}
             </div>
 
@@ -789,6 +759,7 @@ export default function Page() {
 
           {/* ── Visualization ─────────────────────────── */}
           <section
+            data-tour="visualization"
             className="min-h-0 flex flex-col min-w-0"
             style={{ width: `${paneWidths.center}%` }}
           >
@@ -998,20 +969,23 @@ export default function Page() {
             style={{ width: `${paneWidths.right}%` }}
           >
             {/* Debug controls */}
-            <TimelineControls
-              steps={mergedTrace}
-              currentStep={playback.currentStep}
-              isRunning={isRunning}
-              isPlaying={playback.isPlaying}
-              speed={playback.playbackSpeed}
-              onStepChange={setCurrentStep}
-              onTogglePlay={() => setPlaying(!playback.isPlaying)}
-              onSpeedChange={setSpeed}
-            />
+            <div data-tour="debug-controls">
+              <TimelineControls
+                steps={mergedTrace}
+                currentStep={playback.currentStep}
+                isRunning={isRunning}
+                isPlaying={playback.isPlaying}
+                speed={playback.playbackSpeed}
+                onStepChange={setCurrentStep}
+                onTogglePlay={() => setPlaying(!playback.isPlaying)}
+                onSpeedChange={setSpeed}
+              />
+            </div>
 
             <div className="flex-1 min-h-0 flex flex-col">
               {/* Variable group */}
               <div
+                data-tour="variables"
                 className="min-h-0 flex flex-col"
                 style={{ height: `${rightHeights.variable}%` }}
               >
@@ -1087,6 +1061,7 @@ export default function Page() {
 
               {/* Input group */}
               <div
+                data-tour="input"
                 className="min-h-0 flex flex-col"
                 style={{ height: `${rightHeights.input}%` }}
               >
@@ -1257,6 +1232,9 @@ export default function Page() {
           </div>
         ))}
       </div>
+
+      {/* ── Guided Tour ───────────────────────────────────────── */}
+      <GuidedTour />
     </div>
   );
 }
