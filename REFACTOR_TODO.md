@@ -104,9 +104,9 @@ it('GridLinearPanel은 step이 null일 때 플레이스홀더를 보여준다')
 
 #### 2C. Trace 정제
 
-- [ ] `src/lib/traceSanitize.ts` 생성
-- [ ] `page.tsx` → `BLOCKED_RUNTIME_VAR_NAMES`(L382), `isRuntimeNoiseVar()`(L413), `sanitizeRawTrace()`(L436), `sanitizeVarTypes()`(L450), `collectUserDeclaredSymbols()`(L461), `sanitizeRawTraceWithAllowlist()`(L596), `sanitizeVarTypesWithAllowlist()`(L612) 추출
-- [ ] 유닛 테스트 작성 → `npm run test` 통과
+- [x] `src/lib/traceSanitize.ts` 생성
+- [x] `page.tsx` → `BLOCKED_RUNTIME_VAR_NAMES`, `isRuntimeNoiseVar()`, `sanitizeRawTrace()`, `sanitizeVarTypes()`, `collectUserDeclaredSymbols()`, `sanitizeRawTraceWithAllowlist()`, `sanitizeVarTypesWithAllowlist()` 추출
+- [x] 유닛 테스트 작성 → 31개 통과
 
 #### 2D. JSON 파싱 (API 공유)
 
@@ -218,6 +218,7 @@ it('GridLinearPanel은 step이 null일 때 플레이스홀더를 보여준다')
 ## 발견된 버그 (리팩토링 중 발견, 별도 수정 필요)
 
 - [ ] **`detectLanguageFromCode` 주석 내 키워드 반영 버그** — 라인 구문 스코어링에서는 주석(`#`, `//`)을 제거하지만, 단어 키워드 매칭에서는 원본 텍스트(`compact`)를 사용하여 주석 내 키워드도 스코어에 반영됨. `compact` 대신 주석 제거된 텍스트를 사용해야 함. (`src/lib/languageDetection.ts`)
+- [ ] **`collectUserDeclaredSymbols` JS function 파라미터 추출 버그** — `arg.replace(/[=\s].*/, "")`에서 `[=\s]`의 `\s`가 선행 공백을 먼저 매칭하여, 콤마 뒤 공백이 있는 두 번째 이후 파라미터(`", arr"`)가 빈 문자열로 소실됨. `.trim()` 후 `replace` 하거나 `/=.*/`로 변경 필요. (`src/lib/traceSanitize.ts`)
 - [ ] **`highlightJsLine` $ 접두 식별자 버그** — JS 토크나이저의 식별자 정규식 `\b[A-Za-z_$][A-Za-z0-9_$]*\b`에서 `\b`가 `$` 앞에서 word boundary로 동작하지 않아, `$el` 같은 식별자가 `"$"(갭) + "el"(식별자)`로 분리됨. `\b` 대신 `(?<![A-Za-z0-9_$])` lookbehind 사용 등으로 수정 필요. (`src/lib/syntaxHighlight.ts`)
 
 ### 리팩토링 중 발견된 버그 처리 원칙
