@@ -1,11 +1,16 @@
-import { highlightJsLine, highlightPythonLine } from "@/lib/syntaxHighlight";
+import {
+  highlightJavaLine,
+  highlightJsLine,
+  highlightPythonLine,
+} from "@/lib/syntaxHighlight";
+import type { SupportedLanguage } from "@/lib/language";
 import { useLineStepMap } from "@/hooks/useLineStepMap";
 import { useLineClick } from "@/hooks/useLineClick";
 import type { MergedTraceStep } from "@/types/prova";
 
 interface DebugCodeEditorProps {
   code: string;
-  language: "python" | "javascript";
+  language: SupportedLanguage;
   wordWrap: boolean;
   tabSize: number;
   mergedTrace: MergedTraceStep[];
@@ -38,7 +43,11 @@ export function DebugCodeEditor({
   });
 
   const highlightLine =
-    language === "javascript" ? highlightJsLine : highlightPythonLine;
+    language === "javascript"
+      ? highlightJsLine
+      : language === "java"
+        ? highlightJavaLine
+        : highlightPythonLine;
 
   return (
     <div
@@ -67,7 +76,7 @@ export function DebugCodeEditor({
             // 이미 실행 vs 아직 미실행 판별
             const steps = lineStepMap.get(lineNo)!;
             const hasVisited = steps.some((s) => s <= currentStepIndex);
-            dotClass = hasVisited ? "bg-[#58a6ff]/30" : "bg-[#58a6ff]/15";
+            dotClass = hasVisited ? "bg-[#58a6ff]/50" : "bg-[#58a6ff]/25";
           }
         }
 
@@ -85,12 +94,14 @@ export function DebugCodeEditor({
             title={
               hitInfo && hitInfo.totalHits > 1
                 ? `×${hitInfo.totalHits}`
-                : undefined
+                : active && hitInfo && hitInfo.totalHits === 1
+                  ? "current"
+                  : undefined
             }
           >
-            {/* 실행 도트 (2회 이상 실행된 줄만) */}
+            {/* 실행 도트: trace에 등장한 모든 라인에 항상 표시 */}
             <span className="w-3 shrink-0 flex items-center justify-center">
-              {hitInfo && hitInfo.totalHits >= 2 && (
+              {hitInfo && (
                 <span
                   className={`inline-block w-1.5 h-1.5 rounded-full ${dotClass}`}
                 />

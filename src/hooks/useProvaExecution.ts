@@ -11,6 +11,7 @@ import {
 } from "@/lib/traceSanitize";
 import { stableStringifyObject } from "@/lib/textUtils";
 import { getFromCache, saveToCache } from "@/lib/analyzeCache";
+import { lang, type SupportedLanguage } from "@/lib/language";
 
 export function useProvaExecution({
   language,
@@ -37,7 +38,7 @@ export function useProvaExecution({
   setUiMode: (mode: "ready" | "running" | "visualizing" | "errorStep" | "dataExploration") => void;
   setGlobalError: (error: TraceError | null) => void;
   setCurrentStep: (step: number) => void;
-  setLanguage: (lang: "python" | "javascript") => void;
+  setLanguage: (next: SupportedLanguage) => void;
 }) {
   const runtimeRef = useRef<ProvaRuntime | null>(null);
   const analyzeCacheRef = useRef<Map<string, AnalyzeMetadata>>(new Map());
@@ -55,7 +56,7 @@ export function useProvaExecution({
         onDone: async (payload) => {
           const analyzeLanguage = detectLanguageFromCode(
             codeRef.current,
-            language === "javascript" ? "javascript" : "python",
+            language as SupportedLanguage,
           );
           if (analyzeLanguage !== language) {
             setLanguage(analyzeLanguage);
@@ -82,6 +83,7 @@ export function useProvaExecution({
           setWorkerResult(sanitizedPayload);
           try {
             const analyzeKey = `${analyzeLanguage}\n@@\n${codeRef.current}\n@@\n${stableStringifyObject(sanitizedVarTypes)}\n@@\nmeta-v2-partition-pivot`;
+            const fromMemory = analyzeCacheRef.current.get(analyzeKey);
             const cachedMeta =
               analyzeCacheRef.current.get(analyzeKey) ??
               (await getFromCache(analyzeKey));
@@ -170,10 +172,22 @@ export function useProvaExecution({
           }
         },
         onError: (error) => {
-          setPyodideStatus("error");
+          if (lang(language).java) {
+            setPyodideStatus("ready");
+          } else {
+            setPyodideStatus("error");
+          }
           setGlobalError({ type: "RUNTIME", message: error.message });
         },
         onTimeout: () => {
+          if (lang(language).java) {
+            setPyodideStatus("ready");
+            addToast(
+              "warn",
+              "실행 시간이 초과되었습니다. 코드를 확인 후 다시 시도해 주세요.",
+            );
+            return;
+          }
           setPyodideStatus("reinitializing");
           addToast(
             "warn",
