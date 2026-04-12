@@ -268,7 +268,14 @@ export function instrumentJavaCode(code: string): string {
     }
 
     // 나머지 모든 statement (대입, if, while, return, 메서드 호출 등) — 모두 __t 삽입
-    result.push(`${leadingSpaces(line)}${makeTraceCall(lineNum, classVars, scopeVars, braceDepth)}`);
+    // continue / break / return / throw: 뒤에 삽입하면 unreachable → __t를 앞으로 이동
+    if (/^(?:continue|break|return|throw)\b/.test(trimmed)) {
+      const jumpLine = result.pop()!;
+      result.push(`${leadingSpaces(line)}${makeTraceCall(lineNum, classVars, scopeVars, braceDepth)}`);
+      result.push(jumpLine);
+    } else {
+      result.push(`${leadingSpaces(line)}${makeTraceCall(lineNum, classVars, scopeVars, braceDepth)}`);
+    }
   }
 
   return result.join("\n");

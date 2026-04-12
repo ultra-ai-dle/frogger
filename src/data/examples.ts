@@ -96,6 +96,35 @@ for (let i = 0; i < n; i++) {
 
 console.log(arr.join(' '));`,
       },
+      {
+        language: "java",
+        stdin: "6\n5 3 8 1 4 2",
+        code: `import java.util.*;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        int n = sc.nextInt();
+        int[] arr = new int[n];
+        for (int i = 0; i < n; i++) arr[i] = sc.nextInt();
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n - 1 - i; j++) {
+                if (arr[j] > arr[j + 1]) {
+                    int tmp = arr[j];
+                    arr[j] = arr[j + 1];
+                    arr[j + 1] = tmp;
+                }
+            }
+        }
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < n; i++) {
+            if (i > 0) sb.append(' ');
+            sb.append(arr[i]);
+        }
+        System.out.println(sb);
+    }
+}`,
+      },
     ],
   },
   {
@@ -143,6 +172,35 @@ for (let i = 0; i < n; i++) {
 }
 
 console.log(arr.join(' '));`,
+      },
+      {
+        language: "java",
+        stdin: "6\n5 3 8 1 4 2",
+        code: `import java.util.*;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        int n = sc.nextInt();
+        int[] arr = new int[n];
+        for (int i = 0; i < n; i++) arr[i] = sc.nextInt();
+        for (int i = 0; i < n; i++) {
+            int minIdx = i;
+            for (int j = i + 1; j < n; j++) {
+                if (arr[j] < arr[minIdx]) minIdx = j;
+            }
+            int tmp = arr[i];
+            arr[i] = arr[minIdx];
+            arr[minIdx] = tmp;
+        }
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < n; i++) {
+            if (i > 0) sb.append(' ');
+            sb.append(arr[i]);
+        }
+        System.out.println(sb);
+    }
+}`,
       },
     ],
   },
@@ -194,6 +252,35 @@ for (let i = 1; i < n; i++) {
 }
 
 console.log(arr.join(' '));`,
+      },
+      {
+        language: "java",
+        stdin: "6\n5 3 8 1 4 2",
+        code: `import java.util.*;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        int n = sc.nextInt();
+        int[] arr = new int[n];
+        for (int i = 0; i < n; i++) arr[i] = sc.nextInt();
+        for (int i = 1; i < n; i++) {
+            int key = arr[i];
+            int j = i - 1;
+            while (j >= 0 && arr[j] > key) {
+                arr[j + 1] = arr[j];
+                j--;
+            }
+            arr[j + 1] = key;
+        }
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < n; i++) {
+            if (i > 0) sb.append(' ');
+            sb.append(arr[i]);
+        }
+        System.out.println(sb);
+    }
+}`,
       },
     ],
   },
@@ -252,6 +339,28 @@ function main() {
 }
 
 main();`,
+      },
+      {
+        language: "java",
+        stdin: "6\n1 3 5 7 9 11\n6",
+        code: `import java.util.*;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        int n = sc.nextInt();
+        int[] a = new int[n];
+        for (int i = 0; i < n; i++) a[i] = sc.nextInt();
+        int x = sc.nextInt();
+        int lo = 0, hi = n;
+        while (lo < hi) {
+            int mid = (lo + hi) / 2;
+            if (a[mid] < x) lo = mid + 1;
+            else hi = mid;
+        }
+        System.out.println(lo);
+    }
+}`,
       },
     ],
   },
@@ -316,6 +425,32 @@ function main() {
 
 main();`,
       },
+      {
+        language: "java",
+        stdin: "6\n1 2 4 5 7 11\n13",
+        code: `import java.util.*;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        int n = sc.nextInt();
+        int[] a = new int[n];
+        for (int i = 0; i < n; i++) a[i] = sc.nextInt();
+        int t = sc.nextInt();
+        int i = 0, j = n - 1;
+        while (i < j) {
+            int s = a[i] + a[j];
+            if (s == t) {
+                System.out.println(a[i] + " " + a[j]);
+                return;
+            }
+            if (s < t) i++;
+            else j--;
+        }
+        System.out.println(-1);
+    }
+}`,
+      },
     ],
   },
   {
@@ -367,6 +502,28 @@ function main() {
 }
 
 main();`,
+      },
+      {
+        language: "java",
+        stdin: "4 2\n3 1 5 2",
+        code: `import java.util.*;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        int n = sc.nextInt(), k = sc.nextInt();
+        int[] a = new int[n];
+        for (int i = 0; i < n; i++) a[i] = sc.nextInt();
+        int cur = 0;
+        for (int i = 0; i < k; i++) cur += a[i];
+        int best = cur;
+        for (int i = k; i < n; i++) {
+            cur += a[i] - a[i - k];
+            if (cur > best) best = cur;
+        }
+        System.out.println(best);
+    }
+}`,
       },
     ],
   },
@@ -427,6 +584,31 @@ function main() {
 
 main();`,
       },
+      {
+        language: "java",
+        stdin: "6\npush 1\npush 2\npop\npush 3\npop\npop",
+        code: `import java.util.*;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        int q = sc.nextInt();
+        sc.nextLine();
+        Deque<Integer> s = new ArrayDeque<>();
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < q; i++) {
+            String line = sc.nextLine().trim();
+            if (line.startsWith("push")) {
+                s.push(Integer.parseInt(line.split(" ")[1]));
+            } else {
+                if (sb.length() > 0) sb.append('\\n');
+                sb.append(s.pop());
+            }
+        }
+        System.out.print(sb);
+    }
+}`,
+      },
     ],
   },
   {
@@ -484,6 +666,31 @@ function main() {
 }
 
 main();`,
+      },
+      {
+        language: "java",
+        stdin: "5\npush 1\npush 2\npop\npush 3\npop",
+        code: `import java.util.*;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        int q = sc.nextInt();
+        sc.nextLine();
+        Deque<Integer> dq = new ArrayDeque<>();
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < q; i++) {
+            String line = sc.nextLine().trim();
+            if (line.startsWith("push")) {
+                dq.offer(Integer.parseInt(line.split(" ")[1]));
+            } else {
+                if (sb.length() > 0) sb.append('\\n');
+                sb.append(dq.poll());
+            }
+        }
+        System.out.print(sb);
+    }
+}`,
       },
     ],
   },
@@ -573,6 +780,26 @@ function main() {
 
 main();`,
       },
+      {
+        language: "java",
+        stdin: "3\n3 1 2",
+        code: `import java.util.*;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        int n = sc.nextInt();
+        PriorityQueue<Integer> pq = new PriorityQueue<>();
+        for (int i = 0; i < n; i++) pq.offer(sc.nextInt());
+        StringBuilder sb = new StringBuilder();
+        while (!pq.isEmpty()) {
+            if (sb.length() > 0) sb.append(' ');
+            sb.append(pq.poll());
+        }
+        System.out.println(sb);
+    }
+}`,
+      },
     ],
   },
 
@@ -654,6 +881,43 @@ function main() {
 
 main();`,
       },
+      {
+        language: "java",
+        stdin: "3 3 0\n0 1\n0 2\n1 2",
+        code: `import java.util.*;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        int n = sc.nextInt(), m = sc.nextInt(), st = sc.nextInt();
+        List<List<Integer>> g = new ArrayList<>();
+        for (int i = 0; i < n; i++) g.add(new ArrayList<>());
+        for (int i = 0; i < m; i++) {
+            int a = sc.nextInt(), b = sc.nextInt();
+            g.get(a).add(b);
+            g.get(b).add(a);
+        }
+        for (List<Integer> row : g) Collections.sort(row);
+        boolean[] seen = new boolean[n];
+        Deque<Integer> q = new ArrayDeque<>();
+        q.offer(st);
+        seen[st] = true;
+        StringBuilder sb = new StringBuilder();
+        while (!q.isEmpty()) {
+            int u = q.poll();
+            if (sb.length() > 0) sb.append(' ');
+            sb.append(u);
+            for (int v : g.get(u)) {
+                if (!seen[v]) {
+                    seen[v] = true;
+                    q.offer(v);
+                }
+            }
+        }
+        System.out.println(sb);
+    }
+}`,
+      },
     ],
   },
   {
@@ -728,6 +992,42 @@ function main() {
 }
 
 main();`,
+      },
+      {
+        language: "java",
+        stdin: "3 3 0\n0 1\n0 2\n1 2",
+        code: `import java.util.*;
+
+public class Main {
+    static List<List<Integer>> g;
+    static boolean[] seen;
+    static StringBuilder sb = new StringBuilder();
+
+    static void dfs(int u) {
+        seen[u] = true;
+        if (sb.length() > 0) sb.append(' ');
+        sb.append(u);
+        for (int v : g.get(u)) {
+            if (!seen[v]) dfs(v);
+        }
+    }
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        int n = sc.nextInt(), m = sc.nextInt(), st = sc.nextInt();
+        g = new ArrayList<>();
+        for (int i = 0; i < n; i++) g.add(new ArrayList<>());
+        for (int i = 0; i < m; i++) {
+            int a = sc.nextInt(), b = sc.nextInt();
+            g.get(a).add(b);
+            g.get(b).add(a);
+        }
+        for (List<Integer> row : g) Collections.sort(row);
+        seen = new boolean[n];
+        dfs(st);
+        System.out.println(sb);
+    }
+}`,
       },
     ],
   },
@@ -805,6 +1105,42 @@ function main() {
 
 main();`,
       },
+      {
+        language: "java",
+        stdin: "3 0 1 3\n0 1 4\n0 2 1\n2 1 2",
+        code: `import java.util.*;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        int n = sc.nextInt(), s = sc.nextInt(), t = sc.nextInt(), m = sc.nextInt();
+        List<List<int[]>> g = new ArrayList<>();
+        for (int i = 0; i < n; i++) g.add(new ArrayList<>());
+        for (int i = 0; i < m; i++) {
+            int u = sc.nextInt(), v = sc.nextInt(), w = sc.nextInt();
+            g.get(u).add(new int[]{v, w});
+        }
+        int[] d = new int[n];
+        Arrays.fill(d, Integer.MAX_VALUE);
+        d[s] = 0;
+        PriorityQueue<int[]> pq = new PriorityQueue<>(Comparator.comparingInt(x -> x[0]));
+        pq.offer(new int[]{0, s});
+        while (!pq.isEmpty()) {
+            int[] cur = pq.poll();
+            int du = cur[0], u = cur[1];
+            if (du != d[u]) continue;
+            for (int[] e : g.get(u)) {
+                int v = e[0], w = e[1];
+                if (du + w < d[v]) {
+                    d[v] = du + w;
+                    pq.offer(new int[]{d[v], v});
+                }
+            }
+        }
+        System.out.println(d[t]);
+    }
+}`,
+      },
     ],
   },
   {
@@ -873,6 +1209,37 @@ function main() {
 
 main();`,
       },
+      {
+        language: "java",
+        stdin: "3 2\n0 1\n1 2",
+        code: `import java.util.*;
+
+public class Main {
+    static int[] p;
+
+    static int find(int x) {
+        if (p[x] != x) p[x] = find(p[x]);
+        return p[x];
+    }
+
+    static void union(int a, int b) {
+        int ra = find(a), rb = find(b);
+        if (ra != rb) p[ra] = rb;
+    }
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        int n = sc.nextInt(), m = sc.nextInt();
+        p = new int[n];
+        for (int i = 0; i < n; i++) p[i] = i;
+        for (int i = 0; i < m; i++) {
+            int a = sc.nextInt(), b = sc.nextInt();
+            union(a, b);
+        }
+        System.out.println(find(0) == find(n - 1) ? 1 : 0);
+    }
+}`,
+      },
     ],
   },
 
@@ -923,6 +1290,26 @@ if (n === 0) {
   console.log(dp[n]);
 }`,
       },
+      {
+        language: "java",
+        stdin: "10",
+        code: `import java.util.*;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        int n = sc.nextInt();
+        if (n == 0) {
+            System.out.println(0);
+            return;
+        }
+        int[] dp = new int[n + 1];
+        dp[1] = 1;
+        for (int i = 2; i <= n; i++) dp[i] = dp[i - 1] + dp[i - 2];
+        System.out.println(dp[n]);
+    }
+}`,
+      },
     ],
   },
   {
@@ -966,6 +1353,26 @@ for (let i = 1; i <= n; i++) {
   }
 }
 console.log(dp[W]);`,
+      },
+      {
+        language: "java",
+        stdin: "4 5\n2 3\n3 4\n4 5\n5 6",
+        code: `import java.util.*;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        int n = sc.nextInt(), W = sc.nextInt();
+        int[] dp = new int[W + 1];
+        for (int i = 0; i < n; i++) {
+            int w = sc.nextInt(), v = sc.nextInt();
+            for (int c = W; c >= w; c--) {
+                dp[c] = Math.max(dp[c], dp[c - w] + v);
+            }
+        }
+        System.out.println(dp[W]);
+    }
+}`,
       },
     ],
   },
@@ -1016,6 +1423,27 @@ for (let i = 1; i <= m; i++) {
   }
 }
 console.log(dp[m][n]);`,
+      },
+      {
+        language: "java",
+        stdin: "ABCBDAB\nBDCAB",
+        code: `import java.util.*;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        String a = sc.next(), b = sc.next();
+        int m = a.length(), n = b.length();
+        int[][] dp = new int[m + 1][n + 1];
+        for (int i = 1; i <= m; i++) {
+            for (int j = 1; j <= n; j++) {
+                if (a.charAt(i - 1) == b.charAt(j - 1)) dp[i][j] = dp[i - 1][j - 1] + 1;
+                else dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+            }
+        }
+        System.out.println(dp[m][n]);
+    }
+}`,
       },
     ],
   },
@@ -1074,10 +1502,32 @@ function main() {
 
 main();`,
       },
+      {
+        language: "java",
+        stdin: "5\n2 1 3 0 4\n1\n1 3",
+        code: `import java.util.*;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        int n = sc.nextInt();
+        int[] ps = new int[n + 1];
+        for (int i = 1; i <= n; i++) ps[i] = ps[i - 1] + sc.nextInt();
+        int q = sc.nextInt();
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < q; i++) {
+            int l = sc.nextInt(), r = sc.nextInt();
+            if (i > 0) sb.append('\\n');
+            sb.append(ps[r] - ps[l - 1]);
+        }
+        System.out.print(sb);
+    }
+}`,
+      },
     ],
   },
 
-  // ── Recursion (직접 작성) ────────────────────────────────────────────────
+  // ── Recursion ────────────────────────────────────────────────────────────
   {
     id: "factorial",
     title: "Factorial",
@@ -1114,6 +1564,24 @@ function factorial(n) {
 
 const n = parseInt(lines[0]);
 console.log(factorial(n));`,
+      },
+      {
+        language: "java",
+        stdin: "5",
+        code: `import java.util.*;
+
+public class Main {
+    static int factorial(int n) {
+        if (n <= 1) return 1;
+        return n * factorial(n - 1);
+    }
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        int n = sc.nextInt();
+        System.out.println(factorial(n));
+    }
+}`,
       },
     ],
   },
@@ -1157,6 +1625,26 @@ function hanoi(n, src, dst, tmp) {
 
 const n = parseInt(lines[0]);
 hanoi(n, 'A', 'C', 'B');`,
+      },
+      {
+        language: "java",
+        stdin: "3",
+        code: `import java.util.*;
+
+public class Main {
+    static void hanoi(int n, String src, String dst, String tmp) {
+        if (n == 0) return;
+        hanoi(n - 1, src, tmp, dst);
+        System.out.println(src + " -> " + dst);
+        hanoi(n - 1, tmp, dst, src);
+    }
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        int n = sc.nextInt();
+        hanoi(n, "A", "C", "B");
+    }
+}`,
       },
     ],
   },
@@ -1239,6 +1727,51 @@ function solve(n) {
 
 const n = parseInt(lines[0]);
 solve(n);`,
+      },
+      {
+        language: "java",
+        stdin: "4",
+        code: `import java.util.*;
+
+public class Main {
+    static int n;
+    static int[] cols;
+    static int cnt = 0;
+
+    static boolean safe(int r, int c) {
+        for (int i = 0; i < r; i++) {
+            if (cols[i] == c || Math.abs(cols[i] - c) == r - i) return false;
+        }
+        return true;
+    }
+
+    static void bt(int r) {
+        if (r == n) {
+            cnt++;
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < n; i++) {
+                if (i > 0) sb.append(' ');
+                sb.append(cols[i]);
+            }
+            System.out.println(sb);
+            return;
+        }
+        for (int c = 0; c < n; c++) {
+            if (safe(r, c)) {
+                cols[r] = c;
+                bt(r + 1);
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        n = sc.nextInt();
+        cols = new int[n];
+        bt(0);
+        System.out.println(cnt);
+    }
+}`,
       },
     ],
   },
