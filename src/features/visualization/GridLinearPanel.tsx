@@ -10,7 +10,7 @@ import {
   type LinearPointerMap
 } from "@/features/visualization/linearPointerHelpers";
 import { formatCellValue } from "@/lib/formatValue";
-import { is2DArray, inferBitWidthFromGrid, expand2DBitmaskGridTo3D } from "@/lib/dataDetection";
+import { is2DArray, is2DBitmaskGrid, inferBitWidthFromGrid, expand2DBitmaskGridTo3D } from "@/lib/dataDetection";
 
 type Props = {
   step: MergedTraceStep | null;
@@ -68,14 +68,6 @@ function getAll3DVars(step: MergedTraceStep): Array<{ name: string; value: unkno
     .map(([name, v]) => ({ name, value: v as unknown[][][] }));
 }
 
-function is2DBitmaskGrid(value: unknown): value is number[][] {
-  return is2DArray(value)
-    && (value as unknown[][]).every((row) =>
-      row.every(
-        (cell) => typeof cell === "number" && Number.isInteger(cell) && cell >= 0
-      )
-    );
-}
 
 function getBitmaskGridAs3DVar(step: MergedTraceStep, bitWidth = 1) {
   const entries = Object.entries(step.vars);
