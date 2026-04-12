@@ -170,7 +170,8 @@ export default function Page() {
     return metadata.strategy;
   }, [metadata, displayTags]);
   const { isRecursive, hasCallTree } = useMemo(() => {
-    if (mergedTrace.length === 0) return { isRecursive: false, hasCallTree: false };
+    if (mergedTrace.length === 0)
+      return { isRecursive: false, hasCallTree: false };
     const tree = buildCallTree(mergedTrace);
     const hasCallTree = tree.roots.length > 0;
     // 재귀 = 동일 함수명이 트리에서 2회 이상 등장하거나, 호출 깊이가 3 이상
@@ -185,7 +186,10 @@ export default function Page() {
     const maxCount = Math.max(0, ...funcCounts.values());
     const hasDeepRecursion = [...funcCounts.values()].some((c) => c >= 2);
     const hasDeepDepth = mergedTrace.some((s) => s.scope.depth >= 4);
-    return { isRecursive: hasDeepRecursion || maxCount >= 2 || hasDeepDepth, hasCallTree };
+    return {
+      isRecursive: hasDeepRecursion || maxCount >= 2 || hasDeepDepth,
+      hasCallTree,
+    };
   }, [mergedTrace]);
 
   // 새 실행 결과가 나왔을 때 콜트리 가시성 자동 결정:
@@ -431,7 +435,7 @@ export default function Page() {
       >
         {/* Logo */}
         <div className="font-bold text-[15px] tracking-tight shrink-0">
-          Prog<span className="text-prova-green">ger</span>
+          Frog<span className="text-prova-green">ger</span>
         </div>
 
         {/* Status badge — centered */}
