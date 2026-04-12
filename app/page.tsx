@@ -11,11 +11,22 @@ import { resolveGraphMode } from "@/lib/graphModeInference";
 import { normalizeAndDedupeTags } from "@/lib/tagNormalize";
 import { GuidedTour } from "@/features/tour/GuidedTour";
 import { useTourStore } from "@/features/tour/useTourStore";
-import { IconFiles, IconSettings, IconRefresh, IconExpand, IconWarning, IconPencil } from "@/components/icons";
+import {
+  IconFiles,
+  IconSettings,
+  IconRefresh,
+  IconExpand,
+  IconWarning,
+  IconPencil,
+} from "@/components/icons";
 import { detectLanguageFromCode } from "@/lib/languageDetection";
 import { highlightJsLine, highlightPythonLine } from "@/lib/syntaxHighlight";
 import { maxNumericAbs, formatWithBitMode } from "@/lib/formatValue";
-import { lineFromOffset, detectIndentSize, convertIndent } from "@/lib/textUtils";
+import {
+  lineFromOffset,
+  detectIndentSize,
+  convertIndent,
+} from "@/lib/textUtils";
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation";
 import { usePlaybackTimer } from "@/hooks/usePlaybackTimer";
 import { useDragResize } from "@/hooks/useDragResize";
@@ -81,7 +92,12 @@ export default function Page() {
     callTreeDragAnchorRef,
     CALLTREE_MIN,
     CALLTREE_MAX,
-  } = useDragResize({ setPaneWidths, setRightHeights, setCallTreeWidth, setCallTreeOpen });
+  } = useDragResize({
+    setPaneWidths,
+    setRightHeights,
+    setCallTreeWidth,
+    setCallTreeOpen,
+  });
 
   const {
     pyodideStatus,
@@ -102,7 +118,6 @@ export default function Page() {
     setPlaying,
     setSpeed,
     resetForRun,
-    setAnnotated,
   } = useProvaStore();
 
   const currentStep = mergedTrace[playback.currentStep] ?? null;
@@ -310,7 +325,6 @@ export default function Page() {
     setUiMode,
     setGlobalError,
     setCurrentStep,
-    setAnnotated,
     setLanguage,
   });
 
@@ -393,7 +407,10 @@ export default function Page() {
       )}
 
       {/* ── Header ──────────────────────────────────────────── */}
-      <header data-tour="header" className="shrink-0 h-11 bg-[#161b22] border-b border-prova-line flex items-center px-3 gap-4">
+      <header
+        data-tour="header"
+        className="shrink-0 h-11 bg-[#161b22] border-b border-prova-line flex items-center px-3 gap-4"
+      >
         {/* Logo */}
         <div className="font-bold text-[15px] tracking-tight shrink-0">
           Pro<span className="text-prova-green">va</span>

@@ -417,11 +417,12 @@ function executeInSandbox(instrumentedCode, stdin, limits) {
       runtimeError: null
     });
   } catch (err) {
-    const lineNo = extractErrorLine(err) || 0;
+    const lastStep = trace[trace.length - 1];
+    const lineNo = lastStep ? lastStep.line : (extractErrorLine(err) || 0);
     trace.push({
       step: step,
       line: lineNo,
-      vars: {},
+      vars: lastStep ? Object.assign({}, lastStep.vars) : {},
       scope: { func: "<global>", depth: 1 },
       parent_frames: [],
       stdout: stdoutLines.slice(),
