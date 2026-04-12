@@ -83,6 +83,7 @@ export function useProvaExecution({
   const analyzeInFlightRef = useRef<Map<string, Promise<AnalyzeMetadata>>>(
     new Map(),
   );
+  const explainCacheRef = useRef<Map<string, AnnotatedStep[]>>(new Map());
 
   useEffect(() => {
     setUiMode("ready");
@@ -183,27 +184,34 @@ export function useProvaExecution({
                 sanitizedRawTrace.length,
                 errorStepIndex + 4,
               );
-              const errorContext = sanitizedRawTrace.slice(
-                contextStart,
-                contextEnd,
-              );
-              fetchErrorExplanation(errorContext, meta.algorithm, meta.strategy)
-                .then((annotated) => {
-                  const sparse = new Array<AnnotatedStep>(
-                    sanitizedRawTrace.length,
-                  ).fill({
-                    explanation: "",
-                    visual_actions: [],
-                    aiError: null,
-                  });
-                  annotated.forEach((a, i) => {
-                    sparse[contextStart + i] = a;
-                  });
-                  setAnnotated(sparse);
-                })
-                .catch(() => {
-                  /* AI 실패 시 무시 — 원시 에러 메시지로 fallback */
+              const explainKey = `${analyzeKey}\n@@error@\n${errorStepIndex}`;
+              const applyAnnotated = (annotated: AnnotatedStep[]) => {
+                const sparse = new Array<AnnotatedStep>(
+                  sanitizedRawTrace.length,
+                ).fill({ explanation: "", visual_actions: [], aiError: null });
+                annotated.forEach((a, i) => {
+                  sparse[contextStart + i] = a;
                 });
+                setAnnotated(sparse);
+              };
+
+              const cached = explainCacheRef.current.get(explainKey);
+              if (cached) {
+                applyAnnotated(cached);
+              } else {
+                const errorContext = sanitizedRawTrace.slice(
+                  contextStart,
+                  contextEnd,
+                );
+                fetchErrorExplanation(errorContext, meta.algorithm, meta.strategy)
+                  .then((annotated) => {
+                    explainCacheRef.current.set(explainKey, annotated);
+                    applyAnnotated(annotated);
+                  })
+                  .catch(() => {
+                    /* AI 실패 시 무시 — 원시 에러 메시지로 fallback */
+                  });
+              }
             }
           } catch (error) {
             const message =
