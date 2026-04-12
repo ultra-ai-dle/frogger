@@ -118,7 +118,6 @@ export default function Page() {
     setPlaying,
     setSpeed,
     resetForRun,
-    setAnnotated,
   } = useProvaStore();
 
   const currentStep = mergedTrace[playback.currentStep] ?? null;
@@ -326,7 +325,6 @@ export default function Page() {
     setUiMode,
     setGlobalError,
     setCurrentStep,
-    setAnnotated,
     setLanguage,
   });
 

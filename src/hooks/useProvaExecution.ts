@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { AnalyzeMetadata, AnnotatedStep, RawTraceStep, BranchLines, TraceError } from "@/types/prova";
+import { AnalyzeMetadata, RawTraceStep, BranchLines, TraceError } from "@/types/prova";
 import { ProvaRuntime } from "@/features/execution/runtime";
 import { detectLanguageFromCode } from "@/lib/languageDetection";
 import {
@@ -12,43 +12,6 @@ import {
 import { stableStringifyObject } from "@/lib/textUtils";
 import { getFromCache, saveToCache } from "@/lib/analyzeCache";
 
-async function fetchErrorExplanation(
-  steps: RawTraceStep[],
-  algorithm: string,
-  strategy: string,
-): Promise<AnnotatedStep[]> {
-  const res = await fetch("/api/explain", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ rawTrace: steps, algorithm, strategy }),
-  });
-  if (!res.ok || !res.body) return [];
-
-  const chunks: AnnotatedStep[] = [];
-  const reader = res.body.getReader();
-  const decoder = new TextDecoder();
-  let buf = "";
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buf += decoder.decode(value, { stream: true });
-    const blocks = buf.split("\n\n");
-    buf = blocks.pop() ?? "";
-    for (const block of blocks) {
-      const dataLine = block.split("\n").find((l) => l.startsWith("data:"));
-      if (!dataLine) continue;
-      try {
-        const parsed = JSON.parse(dataLine.slice(5));
-        if (Array.isArray(parsed.chunk)) chunks.push(...parsed.chunk);
-      } catch {
-        /* 파싱 실패 시 무시 */
-      }
-    }
-  }
-  return chunks;
-}
-
 export function useProvaExecution({
   language,
   codeRef,
@@ -59,7 +22,6 @@ export function useProvaExecution({
   setUiMode,
   setGlobalError,
   setCurrentStep,
-  setAnnotated,
   setLanguage,
 }: {
   language: string;
@@ -75,7 +37,6 @@ export function useProvaExecution({
   setUiMode: (mode: "ready" | "running" | "visualizing" | "errorStep" | "dataExploration") => void;
   setGlobalError: (error: TraceError | null) => void;
   setCurrentStep: (step: number) => void;
-  setAnnotated: (annotated: AnnotatedStep[]) => void;
   setLanguage: (lang: "python" | "javascript") => void;
 }) {
   const runtimeRef = useRef<ProvaRuntime | null>(null);
@@ -83,7 +44,6 @@ export function useProvaExecution({
   const analyzeInFlightRef = useRef<Map<string, Promise<AnalyzeMetadata>>>(
     new Map(),
   );
-  const explainCacheRef = useRef<Map<string, AnnotatedStep[]>>(new Map());
 
   useEffect(() => {
     setUiMode("ready");
@@ -177,42 +137,6 @@ export function useProvaExecution({
             setUiMode(errorStepIndex >= 0 ? "errorStep" : "visualizing");
             setCurrentStep(errorStepIndex >= 0 ? errorStepIndex : 0);
             setPyodideStatus("ready");
-
-            if (errorStepIndex >= 0) {
-              const contextStart = Math.max(0, errorStepIndex - 3);
-              const contextEnd = Math.min(
-                sanitizedRawTrace.length,
-                errorStepIndex + 4,
-              );
-              const explainKey = `${analyzeKey}\n@@error@\n${errorStepIndex}`;
-              const applyAnnotated = (annotated: AnnotatedStep[]) => {
-                const sparse = new Array<AnnotatedStep>(
-                  sanitizedRawTrace.length,
-                ).fill({ explanation: "", visual_actions: [], aiError: null });
-                annotated.forEach((a, i) => {
-                  sparse[contextStart + i] = a;
-                });
-                setAnnotated(sparse);
-              };
-
-              const cached = explainCacheRef.current.get(explainKey);
-              if (cached) {
-                applyAnnotated(cached);
-              } else {
-                const errorContext = sanitizedRawTrace.slice(
-                  contextStart,
-                  contextEnd,
-                );
-                fetchErrorExplanation(errorContext, meta.algorithm, meta.strategy)
-                  .then((annotated) => {
-                    explainCacheRef.current.set(explainKey, annotated);
-                    applyAnnotated(annotated);
-                  })
-                  .catch(() => {
-                    /* AI 실패 시 무시 — 원시 에러 메시지로 fallback */
-                  });
-              }
-            }
           } catch (error) {
             const message =
               error instanceof Error ? error.message : String(error);
@@ -284,7 +208,6 @@ export function useProvaExecution({
     setPyodideStatus,
     setUiMode,
     setWorkerResult,
-    setAnnotated,
     setLanguage,
   ]);
 
