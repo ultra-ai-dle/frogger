@@ -19,6 +19,7 @@ export function ExampleCard({ example, onSelect }: ExampleCardProps) {
   return (
     <button
       className="text-left rounded-lg border border-prova-line bg-[#161b22] p-3 hover:border-[#58a6ff]/50 hover:bg-[#1c2128] transition-colors cursor-pointer"
+      title={example.tags.join(", ")}
       onClick={() => onSelect(example, variant)}
     >
       <div className="text-[13px] font-semibold text-[#e6edf3] truncate">
@@ -69,14 +70,6 @@ export function ExampleCard({ example, onSelect }: ExampleCardProps) {
         >
           {example.difficulty === "easy" ? "Easy" : "Medium"}
         </span>
-        {example.tags.slice(0, 2).map((tag) => (
-          <span
-            key={tag}
-            className="text-[10px] text-prova-muted bg-[#21262d] px-1.5 py-0.5 rounded-full"
-          >
-            #{tag}
-          </span>
-        ))}
       </div>
     </button>
   );
