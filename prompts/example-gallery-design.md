@@ -1,0 +1,291 @@
+# 예제 갤러리 설계 문서
+
+> 작성일: 2026-04-12
+> 목적: 학습자가 바로 실행해볼 수 있는 큐레이션된 알고리즘 예제를 제공하여 진입장벽을 낮춘다.
+
+---
+
+## 1. 현재 상태 분석
+
+### 예제 시스템: 없음
+
+| 항목 | 현재 상태 |
+|------|----------|
+| 예제 데이터 파일 | 없음 (JSON, TS 상수, 별도 파일 모두 부재) |
+| 카테고리/태그 구조 | 없음 (태그는 AI가 실행 시 동적 생성) |
+| page.tsx 예제 관련 코드 | localStorage에서 마지막 실행 코드 복원만 존재 |
+| 해시태그 출처 | `/api/analyze` → AI 응답 → `tagNormalize.ts` 정규화 → UI |
+
+### 관련 코드 위치
+
+- 코드 상태: `page.tsx` 로컬 state (`code`, `language`)
+- stdin 상태: Zustand store (`setStdin`)
+- localStorage 키: `prova:lastExecutedCode`, `prova:lastExecutedStdin`, `prova:lastSelectedLanguage`
+- 모달/다이얼로그 컴포넌트: 없음 (인라인 배너 + 토스트만 존재)
+- 아이콘: `src/components/icons/AppIcons.tsx` — `IconFiles` 활용 가능
+
+---
+
+## 2. 큐레이션 전략
+
+### 카테고리 구성 (6개)
+
+| 카테고리 | 키 | 한글 | 선정 이유 |
+|----------|-----|------|----------|
+| Sorting | `sorting` | 정렬 | 배열 스왑 시각화가 가장 직관적 |
+| Search | `search` | 탐색 | 포인터/피벗 움직임이 명확 |
+| Data Structure | `data-structure` | 자료구조 | 스택/큐/힙 특수 렌더링 활용 |
+| Graph | `graph` | 그래프 | GraphPanel 활용 극대화 |
+| DP | `dp` | 동적 프로그래밍 | 2D 그리드 테이블 채우기 |
+| Recursion | `recursion` | 재귀/백트래킹 | 콜트리 시각화 |
+
+### 카테고리별 대표 예제 (총 ~20개)
+
+선정 기준: **코드 15줄 이내** + **시각화 효과 뚜렷** + **초보자 친화**
+
+| 카테고리 | 예제 | 난이도 | 시각화 강점 |
+|----------|------|--------|------------|
+| **정렬** | Bubble Sort | Easy | 인접 원소 스왑 |
+| | Selection Sort | Easy | min 탐색 + 스왑 |
+| | Insertion Sort | Easy | 삽입 위치 탐색 |
+| **탐색** | Binary Search | Easy | 범위 축소 과정 |
+| | Linear Search | Easy | 순차 스캔 |
+| | Two Pointers | Medium | 양쪽 포인터 수렴 |
+| **자료구조** | Stack — 괄호 매칭 | Easy | LIFO 시각화 |
+| | Queue — BFS 레벨 | Easy | FIFO 시각화 |
+| | Min Heap Push/Pop | Medium | 힙 구조 변화 |
+| **그래프** | BFS | Easy | 레벨별 탐색 확산 |
+| | DFS | Easy | 깊이 우선 경로 |
+| | Dijkstra | Medium | 최단거리 갱신 |
+| | Union-Find | Medium | 컴포넌트 병합 |
+| **DP** | Fibonacci (메모이제이션) | Easy | 1D 테이블 채우기 |
+| | 0/1 Knapsack | Medium | 2D 그리드 채우기 |
+| | LCS | Medium | 2D 그리드 채우기 |
+| **재귀** | Factorial | Easy | 콜스택 시각화 |
+| | Tower of Hanoi | Medium | 재귀 트리 |
+| | N-Queens (4×4) | Medium | 백트래킹 상태 변화 |
+
+### "더 보기" 처리
+
+- 카테고리 내 `featured === true`인 예제만 초기 노출 (3~4개)
+- "더 보기 (+N개)" 클릭 → 해당 카테고리 전체 펼침
+- **검색 기능은 1차 출시에서 제외** — 20개 큐레이션이면 충분, 전체 50개 이상 시 추가 검토
+
+---
+
+## 3. 갤러리 UX 설계
+
+### 진입점
+
+헤더 우측, 투어 아이콘 왼쪽에 갤러리 버튼 배치:
+
+```
+┌──── Header (48px) ─────────────────────────────────────────────┐
+│  Prova 로고   │   [알고리즘 배지]   │  [📂 갤러리] [? 투어]   │
+└────────────────────────────────────────────────────────────────┘
+```
+
+- 아이콘: `IconFiles` (AppIcons.tsx에 기존 존재)
+- 크기: `h-7 w-7` (투어 버튼과 동일)
+- 툴팁: "예제 갤러리"
+
+### 갤러리 방식: 센터 모달
+
+사이드패널은 3열 레이아웃 충돌, 드롭다운은 공간 부족 → **고정 오버레이 모달 (max-w-2xl)**
+
+```
+┌─────────────────────────────────────────────────┐
+│  예제 갤러리                              [✕]   │
+├──────────┬──────────────────────────────────────┤
+│          │                                      │
+│ ● 정렬   │  ┌─────────┐ ┌─────────┐ ┌────────┐ │
+│   탐색   │  │ Bubble  │ │Selection│ │Insert  │ │
+│   자료구조│  │ Sort    │ │ Sort   │ │ Sort   │ │
+│   그래프  │  │ ★ Easy  │ │ ★ Easy │ │ ★ Easy │ │
+│   DP     │  │ #array  │ │ #array │ │ #array │ │
+│   재귀   │  └─────────┘ └─────────┘ └────────┘ │
+│          │                                      │
+│          │  + 더 보기 (2개)                      │
+│          │                                      │
+├──────────┴──────────────────────────────────────┤
+│  Python · JavaScript 지원 | 선택하면 에디터에 로드  │
+└─────────────────────────────────────────────────┘
+```
+
+### 카드 구성
+
+각 예제 카드에 표시할 정보:
+
+| 필드 | 예시 | 비고 |
+|------|------|------|
+| 제목 | "Bubble Sort" | 영문 (국제적) |
+| 한글명 | "버블 정렬" | 서브텍스트 |
+| 난이도 | ★ Easy | 초록 뱃지 / ★★ Medium 노란 뱃지 |
+| 태그 | `#sorting` `#array` | 최대 2개 |
+| 언어 | 🐍 / JS | 작은 아이콘 |
+
+### 선택 후 흐름
+
+```
+사용자가 카드 클릭
+  ├── 현재 코드 비어있음 → 즉시 로드
+  ├── 현재 코드 === localStorage 기본값 → 즉시 로드
+  └── 현재 코드 수정됨 → 확인 다이얼로그 ("현재 코드를 덮어쓸까요?")
+       ├── 확인 → 로드
+       └── 취소 → 갤러리 유지
+
+로드 시:
+  1. code ← example.code
+  2. stdin ← example.stdin
+  3. language ← example.language (자동 전환)
+  4. 모달 닫기
+  5. 자동 실행 안 함 (사용자가 코드를 먼저 읽도록 유도)
+```
+
+---
+
+## 4. 데이터 구조 설계
+
+### 파일 위치
+
+```
+src/data/
+├── examples.ts          # 타입 정의 + 전체 예제 데이터
+└── (단일 파일로 충분 — 50개 미만이면 분리 불필요)
+```
+
+### 타입 정의
+
+`src/types/prova.ts`에 추가하지 않음 — 시각화 파이프라인과 무관한 독립 데이터.
+
+```typescript
+// src/data/examples.ts
+
+export type ExampleCategory =
+  | "sorting"
+  | "search"
+  | "data-structure"
+  | "graph"
+  | "dp"
+  | "recursion";
+
+export interface CategoryMeta {
+  key: ExampleCategory;
+  label: string;        // "정렬"
+  labelEn: string;      // "Sorting"
+}
+
+export interface ExampleItem {
+  id: string;                    // "bubble-sort"
+  title: string;                 // "Bubble Sort"
+  titleKo: string;               // "버블 정렬"
+  category: ExampleCategory;
+  tags: string[];                // ["sorting", "array"]
+  difficulty: "easy" | "medium";
+  language: "python" | "javascript";
+  code: string;
+  stdin: string;
+  featured: boolean;             // true → 갤러리 초기 노출
+}
+```
+
+### 큐레이션 구분
+
+- `featured: true` — 카테고리별 상위 3~4개
+- 갤러리 초기: `examples.filter(e => e.featured)` 만 표시
+- "더 보기": `examples.filter(e => e.category === selected)` 전체 표시
+- 순서: 배열 내 순서 = 표시 순서
+
+### 데이터 예시
+
+```typescript
+export const CATEGORIES: CategoryMeta[] = [
+  { key: "sorting",        label: "정렬",          labelEn: "Sorting" },
+  { key: "search",         label: "탐색",          labelEn: "Search" },
+  { key: "data-structure", label: "자료구조",       labelEn: "Data Structure" },
+  { key: "graph",          label: "그래프",         labelEn: "Graph" },
+  { key: "dp",             label: "DP",            labelEn: "Dynamic Programming" },
+  { key: "recursion",      label: "재귀",          labelEn: "Recursion" },
+];
+
+export const EXAMPLES: ExampleItem[] = [
+  {
+    id: "bubble-sort",
+    title: "Bubble Sort",
+    titleKo: "버블 정렬",
+    category: "sorting",
+    tags: ["sorting", "array"],
+    difficulty: "easy",
+    language: "python",
+    featured: true,
+    stdin: "5\n3 1 4 1 5",
+    code: `n = int(input())
+arr = list(map(int, input().split()))
+for i in range(n):
+    for j in range(n - 1 - i):
+        if arr[j] > arr[j + 1]:
+            arr[j], arr[j + 1] = arr[j + 1], arr[j]
+print(arr)`,
+  },
+  // ... 추가 예제
+];
+```
+
+---
+
+## 5. 구현 계획
+
+### 신규 파일
+
+| 파일 | 역할 |
+|------|------|
+| `src/data/examples.ts` | 타입 정의 + 카테고리 메타 + 전체 예제 데이터 |
+| `src/features/gallery/ExampleGallery.tsx` | 갤러리 모달 (카테고리 탭 + 카드 그리드 + 더보기) |
+| `src/features/gallery/ExampleCard.tsx` | 개별 예제 카드 컴포넌트 |
+| `src/features/gallery/useGallery.ts` | 모달 열기/닫기 + 카테고리 선택 + 필터 상태 |
+
+### 수정 파일
+
+| 파일 | 변경 내용 |
+|------|----------|
+| `app/page.tsx` | 헤더에 갤러리 버튼 추가, ExampleGallery 마운트, onSelect 핸들러 (code/stdin/language 세팅 + 덮어쓰기 확인) |
+| `src/components/icons/AppIcons.tsx` | 갤러리 전용 아이콘 추가 (또는 IconFiles 재활용) |
+
+### 구현 순서
+
+```
+Phase 1: 데이터 (examples.ts)
+  → 타입 정의 + 카테고리 메타 + 큐레이션 예제 ~20개 작성
+  → 각 예제를 Pyodide/JS Worker에서 실행 테스트
+
+Phase 2: 갤러리 UI
+  → useGallery.ts (상태 관리)
+  → ExampleCard.tsx (카드 컴포넌트)
+  → ExampleGallery.tsx (모달 + 카테고리 탭 + 그리드)
+
+Phase 3: page.tsx 연결
+  → 헤더 갤러리 버튼
+  → 모달 마운트
+  → onSelect: 덮어쓰기 확인 → code/stdin/language 세팅 → 모달 닫기
+```
+
+### 예상 난이도 및 리스크
+
+| 항목 | 난이도 | 리스크 | 대응 |
+|------|--------|--------|------|
+| 예제 데이터 작성 | 중 | 코드가 Worker에서 실행 안 될 수 있음 | 각 예제 실행 테스트 필수 |
+| 모달 UI 신규 구현 | 낮 | 기존 모달 없어서 새로 만듦 | Tailwind + fixed overlay로 간단 구현 |
+| page.tsx 연결 | 낮 | 로컬 state라 props 전달만으로 충분 | — |
+| 덮어쓰기 확인 | 낮 | — | window.confirm 또는 인라인 다이얼로그 |
+| 100vh 레이아웃 | 없음 | 모달은 fixed overlay라 레이아웃 무관 | — |
+| ESC 키 충돌 | 낮 | 에디터 ESC와 모달 ESC 충돌 가능 | 모달 열림 시 에디터 포커스 해제 |
+
+---
+
+## 6. 향후 확장 고려사항 (1차 범위 밖)
+
+- 검색 기능: 전체 예제 50개 이상 시
+- 사용자 즐겨찾기: localStorage 기반
+- 커뮤니티 예제 제출: 별도 백엔드 필요
+- 예제별 미리보기 썸네일: 정적 스크린샷 또는 동적 생성
+- 다국어 코드 (Python + JS 동시 제공): 1차는 Python only로 시작 가능
