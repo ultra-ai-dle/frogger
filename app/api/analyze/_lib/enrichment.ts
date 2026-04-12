@@ -217,7 +217,9 @@ type SpecialKindValue =
   | "UNIONFIND"
   | "VISITED"
   | "DISTANCE"
-  | "PARENT_TREE";
+  | "PARENT_TREE"
+  | "BINARY_TREE"
+  | "SEGMENT_TREE";
 
 /**
  * 코드 패턴 분석으로 special_var_kinds를 보완한다.
@@ -319,6 +321,25 @@ export function enrichSpecialVarKinds(
       `\\b${v}\\s*\\[\\s*\\w+\\s*\\]\\s*=\\s*(?:True|1)`,
     ).test(code);
     if (hasVisitedSet) extra[v] = "VISITED";
+  }
+
+  // SEGMENT_TREE: build(1, 0, n-1) 또는 update(node, ...) 재귀 패턴 + 배열 크기 4*n
+  const segBuildRe = /def\s+(?:build|update|query)\s*\(\s*\w+\s*,\s*\w+\s*,\s*\w+\s*\)/g;
+  const hasSegFuncs = segBuildRe.test(code);
+  if (hasSegFuncs) {
+    const seg2NodeRe = /\b([A-Za-z_][A-Za-z0-9_]*)\s*\[\s*2\s*\*\s*\w+\s*\]/g;
+    while ((m = seg2NodeRe.exec(code)) !== null) {
+      const v = m[1];
+      if (varNames.includes(v) && !existing[v] && !extra[v]) extra[v] = "SEGMENT_TREE";
+    }
+  }
+
+  // BINARY_TREE: 1D 배열에서 2*i+1 / 2*i+2 (0-indexed) 또는 2*i / 2*i+1 (1-indexed) 자식 접근
+  const btChildRe = /\b([A-Za-z_][A-Za-z0-9_]*)\s*\[\s*2\s*\*\s*\w+\s*[+\-]\s*[12]\s*\]/g;
+  while ((m = btChildRe.exec(code)) !== null) {
+    const v = m[1];
+    if (varNames.includes(v) && !existing[v] && !extra[v] && extra[v] !== "SEGMENT_TREE")
+      extra[v] = "BINARY_TREE";
   }
 
   if (Object.keys(extra).length === 0) return meta;

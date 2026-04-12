@@ -203,6 +203,16 @@ export default function Page() {
     isAnalyzingCode,
     metadata?.special_var_kinds,
   ]);
+  const isTreeHint = useMemo(() => {
+    if (!metadata) return false;
+    const signals = [
+      ...(metadata.tags ?? []),
+      ...(metadata.detected_algorithms ?? []),
+      metadata.algorithm ?? "",
+    ].map((s) => s.toLowerCase());
+    return signals.some((s) => /(^|[-_\s])tree($|[-_\s])|^tree$|트리/.test(s));
+  }, [metadata]);
+
   const shouldShowBitToggle = useMemo(() => {
     if (!metadata) return false;
     if (metadata.uses_bitmasking) return true;
@@ -413,7 +423,7 @@ export default function Page() {
       >
         {/* Logo */}
         <div className="font-bold text-[15px] tracking-tight shrink-0">
-          Pro<span className="text-prova-green">va</span>
+          Prog<span className="text-prova-green">ger</span>
         </div>
 
         {/* Status badge — centered */}
@@ -918,6 +928,7 @@ export default function Page() {
                     linearPivots={metadata?.linear_pivots}
                     linearContextVarNames={metadata?.linear_context_var_names}
                     specialVarKinds={metadata?.special_var_kinds}
+                    isTreeHint={isTreeHint}
                     playbackControls={{
                       isPlaying: playback.isPlaying,
                       currentStep: playback.currentStep,
