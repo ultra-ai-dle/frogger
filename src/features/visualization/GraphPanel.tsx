@@ -46,6 +46,8 @@ import {
   VisitedView,
   DistanceView,
   ParentTreeView,
+  BinaryTreeView,
+  SegmentTreeView,
   type GraphStepState,
 } from "./specialViews";
 import {
@@ -66,7 +68,7 @@ import {
   topologySignature,
 } from "./graphHelpers";
 
-type SpecialKind = "HEAP" | "QUEUE" | "STACK" | "DEQUE" | "UNIONFIND" | "VISITED" | "DISTANCE" | "PARENT_TREE";
+type SpecialKind = "HEAP" | "QUEUE" | "STACK" | "DEQUE" | "UNIONFIND" | "VISITED" | "DISTANCE" | "PARENT_TREE" | "BINARY_TREE" | "SEGMENT_TREE";
 
 type Props = {
   step: MergedTraceStep | null;
@@ -669,7 +671,7 @@ export function GraphPanel({
         {/* Structure regions */}
         <div className="space-y-2">
           {parsed.structures.map((structure) => {
-            const SPECIAL_KINDS: ReadonlySet<string> = new Set(["HEAP","QUEUE","STACK","DEQUE","UNIONFIND","VISITED","DISTANCE","PARENT_TREE"]);
+            const SPECIAL_KINDS: ReadonlySet<string> = new Set(["HEAP","QUEUE","STACK","DEQUE","UNIONFIND","VISITED","DISTANCE","PARENT_TREE","BINARY_TREE","SEGMENT_TREE"]);
             const isSpecial = SPECIAL_KINDS.has(structure.kind);
             const promoted3D =
               bitmaskMode && is2DBitmaskGrid(structure.value)
@@ -699,6 +701,7 @@ export function GraphPanel({
             const SPECIAL_BADGE_MAP: Partial<Record<string, string>> = {
               HEAP: "HEAP", QUEUE: "QUEUE", STACK: "STACK", DEQUE: "DEQUE",
               UNIONFIND: "UNION-FIND", VISITED: "VISITED", DISTANCE: "DIST", PARENT_TREE: "TREE",
+              BINARY_TREE: "BIN-TREE", SEGMENT_TREE: "SEG-TREE",
             };
             const specialBadge = SPECIAL_BADGE_MAP[structure.kind] ?? null;
 
@@ -751,6 +754,20 @@ export function GraphPanel({
                 <DistanceView arr={structure.value as unknown[]} bitmaskMode={bitmaskMode} bitWidth={bitWidth} />
               ) : structure.kind === "PARENT_TREE" ? (
                 <ParentTreeView arr={structure.value as unknown[]} stepState={stepState} />
+              ) : structure.kind === "BINARY_TREE" ? (
+                <BinaryTreeView
+                  arr={structure.value as unknown[]}
+                  stepState={stepState}
+                  bitmaskMode={bitmaskMode}
+                  bitWidth={bitWidth}
+                />
+              ) : structure.kind === "SEGMENT_TREE" ? (
+                <SegmentTreeView
+                  arr={structure.value as unknown[]}
+                  stepState={stepState}
+                  bitmaskMode={bitmaskMode}
+                  bitWidth={bitWidth}
+                />
               ) : (structure.kind === "ARRAY2D" || structure.kind === "GRAPHLIKE") && resolvedMode === "GRAPH" ? (
                 <GraphCanvas
                   graphKey={structure.key}
