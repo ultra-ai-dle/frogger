@@ -76,6 +76,7 @@ const LAST_LANGUAGE_USER_PINNED_KEY = "prova:lastLanguageUserPinned";
 
 export default function Page() {
   const [code, setCode] = useState("");
+  const [lastRunCode, setLastRunCode] = useState<string | null>(null);
   const [tabSize, setTabSize] = useState<2 | 4>(4);
   const [language, setLanguage] = useState<SupportedLanguage>("python");
   /** true면 코드 패턴 추론으로 언어를 바꾸지 않음(드롭다운 선택이 우선) */
@@ -1224,7 +1225,7 @@ export default function Page() {
                         pyodideStatus === "ready" &&
                         !isCodeEmpty &&
                         !isStdinEmpty
-                          ? mergedTrace.length > 0
+                          ? mergedTrace.length > 0 && code === lastRunCode
                             ? "bg-[#21262d] border border-prova-line text-[#c9d1d9] hover:bg-[#262c36]"
                             : "bg-prova-green text-black hover:bg-[#4ac763]"
                           : pyodideStatus === "error"
@@ -1278,6 +1279,7 @@ export default function Page() {
                           // ignore storage failures
                         }
                         codeRef.current = code;
+                        setLastRunCode(code);
                         resetForRun();
                         setPyodideStatus("running");
                         runtimeRef.current?.run(code, stdin);
@@ -1285,7 +1287,7 @@ export default function Page() {
                     >
                       {runButtonLabel(
                         pyodideStatus,
-                        mergedTrace.length > 0,
+                        mergedTrace.length > 0 && code === lastRunCode,
                         isCodeEmpty,
                         isStdinEmpty,
                         language,
