@@ -48,7 +48,7 @@ export function ContactModal({
     }
   }, [isOpen]);
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     if (message.trim().length === 0) return;
     setSendState("sending");
     setErrorMessage("");
@@ -78,7 +78,7 @@ export function ContactModal({
       );
       setSendState("error");
     }
-  };
+  }, [message, replyEmail, currentCode, currentStdin, includeCode]);
 
   if (!isOpen) return null;
 

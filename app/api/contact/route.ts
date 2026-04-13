@@ -21,14 +21,14 @@ export async function POST(req: NextRequest) {
 
   const subject = `[Prova 문의] ${message.trim().split("\n")[0].slice(0, 60)}`;
 
-  const bodyParts: string[] = [
-    "=== 문의 내용 ===",
-    message.trim(),
-  ];
+  const trimmedReplyEmail =
+    typeof replyEmail === "string" ? replyEmail.trim() : "";
 
-  if (typeof replyEmail === "string" && replyEmail.trim().length > 0) {
+  const bodyParts: string[] = ["=== 문의 내용 ===", message.trim()];
+
+  if (trimmedReplyEmail.length > 0) {
     bodyParts.push("\n=== 회신 이메일 ===");
-    bodyParts.push(replyEmail.trim());
+    bodyParts.push(trimmedReplyEmail);
   }
 
   if (includeCode && typeof code === "string" && code.trim().length > 0) {
@@ -48,15 +48,20 @@ export async function POST(req: NextRequest) {
     auth: { user: smtpUser, pass: smtpPass },
   });
 
-  const hasReplyEmail = typeof replyEmail === "string" && replyEmail.trim().length > 0;
-
-  await transporter.sendMail({
-    from: `"Prova 문의" <${fromEmail}>`,
-    to: toEmail,
-    ...(hasReplyEmail && { replyTo: replyEmail.trim() }),
-    subject,
-    text: bodyParts.join("\n\n"),
-  });
+  try {
+    await transporter.sendMail({
+      from: `"Prova 문의" <${fromEmail}>`,
+      to: toEmail,
+      ...(trimmedReplyEmail.length > 0 && { replyTo: trimmedReplyEmail }),
+      subject,
+      text: bodyParts.join("\n\n"),
+    });
+  } catch {
+    return NextResponse.json(
+      { error: "이메일 전송에 실패했습니다. 잠시 후 다시 시도해주세요." },
+      { status: 500 },
+    );
+  }
 
   return NextResponse.json({ ok: true });
 }
