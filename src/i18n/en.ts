@@ -92,4 +92,71 @@ export const en: Translations = {
   // ── Locale switcher ──────────────────────────────────────
   locale_switchTo: "한국어",
   locale_switchTitle: "한국어로 전환",
+
+  // ── Contact modal ─────────────────────────────────────────
+  contact_title: "Report a Bug / Contact",
+  contact_description: "Bugs, suggestions, anything goes.",
+  contact_descriptionHighlight: "Every bug report is welcome.",
+  contact_messagePlaceholder:
+    "e.g. After running bubble sort, the error highlight appears on the wrong line.\n\nSteps to reproduce:\n1. ...\n2. ...",
+  contact_replyEmailLabel: "Reply email",
+  contact_replyEmailOptional: "(optional)",
+  contact_replyEmailPlaceholder: "Enter your email if you'd like a reply when fixed",
+  contact_includeCodeLabel: "Attach editor code",
+  contact_includeCodeHint: "Including your code makes it much easier to reproduce the bug. Thank you 🐸",
+  contact_includeCodeEmpty: "(editor is empty)",
+  contact_cancel: "Cancel",
+  contact_submit: "Send",
+  contact_submitting: "Sending...",
+  contact_successTitle: "Message sent!",
+  contact_successMessage: "Thank you for the feedback. We'll look into it quickly.",
+  contact_successReply: (email) => `We'll reply to ${email} once it's fixed.`,
+  contact_descriptionSuffix: "The more detail you provide, the faster we can fix it.",
+  contact_close: "Close",
+
+  // ── Guided tour UI ────────────────────────────────────────
+  tour_skip: "Skip",
+  tour_prev: "Prev",
+  tour_next: "Next",
+  tour_finish: "Let's go!",
+  tour_completionTitle: "You're all set!",
+  tour_completionBody:
+    "Start writing code and hit the debug button.\nClick the ? button at the top right to replay this tour.",
+  tour_completionStart: "Get started",
+
+  // ── Tour step contents ────────────────────────────────────
+  tour_steps: [
+    {
+      title: "Welcome to Prova",
+      body: "An AI-powered algorithm visualizer & debugger.\nLet's walk you through the key features. This tour takes about a minute.",
+    },
+    {
+      title: "Code Editor",
+      body: "Write your algorithm code here.\nSupports BFS, DFS, DP, and more. Sample code is pre-filled.\nUse the Tab button at the top to switch indent size.",
+    },
+    {
+      title: "Language Selection",
+      body: "Python and JavaScript are supported.\nProva can also auto-detect the language from your code.",
+    },
+    {
+      title: "Input & Run",
+      body: "Enter stdin input and click the debug button.\nAI will analyze your code and decide the best visualization strategy.",
+    },
+    {
+      title: "Visualization Panel",
+      body: "Animates the algorithm using the strategy chosen by AI\n(grid, graph, linear array, etc.).\nA call tree panel appears for recursive functions.",
+    },
+    {
+      title: "Debug Controls",
+      body: "Drag the slider or use Prev/Next to step through execution. Play for auto-playback, with adjustable speed.\nUse ←→ keys to step, Space to play/pause.",
+    },
+    {
+      title: "Variable Monitor",
+      body: "Tracks how variable values change at each step in real time.\nModified variables are highlighted in yellow.",
+    },
+    {
+      title: "Example Gallery",
+      body: "Explore on your own!\nClick here to instantly load sorting, search, graph, and other algorithm examples.",
+    },
+  ],
 };

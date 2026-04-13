@@ -84,4 +84,36 @@ export interface Translations {
   /** Label shown on the button — displays the language to switch TO */
   locale_switchTo: string;
   locale_switchTitle: string;
+
+  // ── Contact modal ─────────────────────────────────────────
+  contact_title: string;
+  contact_description: string;
+  contact_descriptionHighlight: string;
+  contact_messagePlaceholder: string;
+  contact_replyEmailLabel: string;
+  contact_replyEmailOptional: string;
+  contact_replyEmailPlaceholder: string;
+  contact_includeCodeLabel: string;
+  contact_includeCodeHint: string;
+  contact_includeCodeEmpty: string;
+  contact_cancel: string;
+  contact_submit: string;
+  contact_submitting: string;
+  contact_successTitle: string;
+  contact_successMessage: string;
+  contact_successReply: (email: string) => string;
+  contact_descriptionSuffix: string;
+  contact_close: string;
+
+  // ── Guided tour UI ────────────────────────────────────────
+  tour_skip: string;
+  tour_prev: string;
+  tour_next: string;
+  tour_finish: string;
+  tour_completionTitle: string;
+  tour_completionBody: string;
+  tour_completionStart: string;
+
+  // ── Tour step contents (title + body per step) ────────────
+  tour_steps: ReadonlyArray<{ title: string; body: string }>;
 }
