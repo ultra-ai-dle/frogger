@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: "Frogger",
   description: "AI 기반 알고리즘 시각화 디버거",
   verification: {
-    google: "1fd044a39b971271",
+    google: "8sjd3GYnLd0qHTHdyRspbckeumtxmx6OhNAay4FilfI",
   },
   openGraph: {
     title: "Frogger",
