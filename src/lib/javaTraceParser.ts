@@ -73,6 +73,8 @@ export function parseJavaTrace(
       const parsed = JSON.parse(trimmed) as {
         step: number;
         line: number;
+        func?: string;
+        depth?: number;
         vars: Record<string, unknown>;
       };
 
@@ -80,7 +82,7 @@ export function parseJavaTrace(
         step:          parsed.step,
         line:          parsed.line,
         vars:          parsed.vars ?? {},
-        scope:         { func: "main", depth: 0 },
+        scope:         { func: parsed.func ?? "main", depth: parsed.depth ?? 0 },
         parent_frames: [],
         stdout:        [],
         runtimeError:  null,
@@ -116,6 +118,17 @@ export function parseJavaTrace(
 
   const varTypes: Record<string, string>  = extractVarTypesUnion(rawTrace);
   const branchLines: BranchLines          = { loop: [], branch: [] };
+
+  // I/O 유틸리티 변수(Scanner, BufferedReader 등)를 varTypes에서 제거
+  // — value 패턴으로 판단하며 변수명에 의존하지 않는다
+  const JAVA_IO_RE = /^java\.(util\.Scanner\b|io\.(Buffered(?:Reader|Writer)|InputStreamReader|PrintWriter|StreamTokenizer)\b)/;
+  for (const step of rawTrace) {
+    for (const [key, val] of Object.entries(step.vars ?? {})) {
+      if (typeof val === "string" && JAVA_IO_RE.test(val)) {
+        delete varTypes[key];
+      }
+    }
+  }
 
   return { rawTrace, branchLines, varTypes };
 }

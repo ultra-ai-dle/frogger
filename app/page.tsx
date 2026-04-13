@@ -17,7 +17,9 @@ import {
   IconExpand,
   IconWarning,
   IconPencil,
+  IconMail,
 } from "@/components/icons";
+import { ContactModal } from "@/components/ContactModal";
 import { ExampleGallery } from "@/features/gallery/ExampleGallery";
 import { useGallery } from "@/features/gallery/useGallery";
 import type { ExampleItem, ExampleVariant } from "@/data/examples";
@@ -69,12 +71,17 @@ function runButtonLabel(
 const LAST_EXECUTED_CODE_KEY = "prova:lastExecutedCode";
 const LAST_EXECUTED_STDIN_KEY = "prova:lastExecutedStdin";
 const LAST_SELECTED_LANGUAGE_KEY = "prova:lastSelectedLanguage";
+const LAST_LANGUAGE_USER_PINNED_KEY = "prova:lastLanguageUserPinned";
 
 
 export default function Page() {
   const [code, setCode] = useState("");
+  const [lastRunCode, setLastRunCode] = useState<string | null>(null);
   const [tabSize, setTabSize] = useState<2 | 4>(4);
   const [language, setLanguage] = useState<SupportedLanguage>("python");
+  /** true면 코드 패턴 추론으로 언어를 바꾸지 않음(드롭다운 선택이 우선) */
+  const [languageUserPinned, setLanguageUserPinned] = useState(false);
+  const languageUserPinnedRef = useRef(languageUserPinned);
   const [toasts, setToasts] = useState<
     Array<{ id: number; kind: "warn" | "ok"; message: string }>
   >([]);
@@ -97,6 +104,7 @@ export default function Page() {
   });
   const [editCursorLine, setEditCursorLine] = useState(1);
   const [bitmaskMode, setBitmaskMode] = useState(false);
+  const [contactOpen, setContactOpen] = useState(false);
   const gallery = useGallery();
   const {
     splitRootRef,
@@ -132,6 +140,7 @@ export default function Page() {
     setPlaying,
     setSpeed,
     resetForRun,
+    resetToReady,
   } = useProvaStore();
 
   const currentStep = mergedTrace[playback.currentStep] ?? null;
@@ -141,8 +150,11 @@ export default function Page() {
   const isError = uiMode === "errorStep";
   const isVisualizing = uiMode === "visualizing" || isError || isFallback;
   const isDebugMode = uiMode !== "ready";
-  const normalizedLanguage: "python" | "javascript" | "java" =
-    lang(language).js ? "javascript" : lang(language).java ? "java" : "python";
+  const normalizedLanguage: "python" | "javascript" | "java" = lang(language).js
+    ? "javascript"
+    : lang(language).java
+      ? "java"
+      : "python";
   const inferredLanguage = useMemo(
     () =>
       detectLanguageFromCode(
@@ -156,8 +168,7 @@ export default function Page() {
     [code, language],
   );
   const isCodeEmpty = code.trim().length === 0;
-  const isStdinEmpty =
-    lang(inferredLanguage).py && stdin.trim().length === 0;
+  const isStdinEmpty = lang(inferredLanguage).py && stdin.trim().length === 0;
   const isAnalyzingCode =
     pyodideStatus === "running" && !metadata && rawTrace.length > 0;
   const displayTags = useMemo(
@@ -191,27 +202,11 @@ export default function Page() {
     if (hasGraphTag) return "GRAPH" as const;
     return metadata.strategy;
   }, [metadata, displayTags]);
-  const { isRecursive, hasCallTree } = useMemo(() => {
-    if (mergedTrace.length === 0)
-      return { isRecursive: false, hasCallTree: false };
+  // 함수 호출이 하나라도 있으면 true — 자동 열기 여부에 사용
+  const hasCallTree = useMemo(() => {
+    if (mergedTrace.length === 0) return false;
     const tree = buildCallTree(mergedTrace);
-    const hasCallTree = tree.roots.length > 0;
-    // 재귀 = 동일 함수명이 트리에서 2회 이상 등장하거나, 호출 깊이가 3 이상
-    const funcCounts = new Map<string, number>();
-    function walk(nodes: typeof tree.roots) {
-      for (const n of nodes) {
-        funcCounts.set(n.func, (funcCounts.get(n.func) ?? 0) + 1);
-        walk(n.children);
-      }
-    }
-    walk(tree.roots);
-    const maxCount = Math.max(0, ...funcCounts.values());
-    const hasDeepRecursion = [...funcCounts.values()].some((c) => c >= 2);
-    const hasDeepDepth = mergedTrace.some((s) => s.scope.depth >= 4);
-    return {
-      isRecursive: hasDeepRecursion || maxCount >= 2 || hasDeepDepth,
-      hasCallTree,
-    };
+    return tree.roots.length > 0;
   }, [mergedTrace]);
 
   // 새 실행 결과가 나왔을 때 콜트리 가시성 자동 결정:
@@ -288,6 +283,10 @@ export default function Page() {
   }, [code]);
 
   useEffect(() => {
+    languageUserPinnedRef.current = languageUserPinned;
+  }, [languageUserPinned]);
+
+  useEffect(() => {
     try {
       const saved = localStorage.getItem(LAST_EXECUTED_CODE_KEY);
       if (saved && saved.trim().length > 0) {
@@ -300,9 +299,15 @@ export default function Page() {
         setStdin(savedStdin);
       }
       const savedLanguage = localStorage.getItem(LAST_SELECTED_LANGUAGE_KEY);
-      if (savedLanguage === "python" || savedLanguage === "javascript" || savedLanguage === "java") {
+      if (
+        savedLanguage === "python" ||
+        savedLanguage === "javascript" ||
+        savedLanguage === "java"
+      ) {
         setLanguage(savedLanguage as SupportedLanguage);
       }
+      const pinned = localStorage.getItem(LAST_LANGUAGE_USER_PINNED_KEY);
+      if (pinned === "1") setLanguageUserPinned(true);
     } catch {
       // localStorage access can fail in strict/private environments.
     }
@@ -317,13 +322,31 @@ export default function Page() {
   }, [language]);
 
   useEffect(() => {
+    try {
+      localStorage.setItem(
+        LAST_LANGUAGE_USER_PINNED_KEY,
+        languageUserPinned ? "1" : "0",
+      );
+    } catch {
+      // ignore storage failures
+    }
+  }, [languageUserPinned]);
+
+  useEffect(() => {
+    if (languageUserPinned) return;
     if (isRunning) return;
     if (inferredLanguage === normalizedLanguage) return;
     const timer = setTimeout(() => {
       setLanguage(inferredLanguage);
     }, 250);
     return () => clearTimeout(timer);
-  }, [inferredLanguage, isRunning, language, normalizedLanguage]);
+  }, [
+    inferredLanguage,
+    isRunning,
+    language,
+    normalizedLanguage,
+    languageUserPinned,
+  ]);
 
   const applyTabSizeToCode = (nextTabSize: 2 | 4) => {
     if (nextTabSize === tabSize) return;
@@ -361,12 +384,14 @@ export default function Page() {
 
   const handleGallerySelect = useCallback(
     (variant: ExampleVariant) => {
+      resetToReady();
       setCode(variant.code);
       setStdin(variant.stdin);
+      setLanguageUserPinned(false);
       setLanguage(variant.language);
       gallery.close();
     },
-    [setStdin, gallery],
+    [resetToReady, setStdin, gallery],
   );
 
   const handleGalleryCardClick = useCallback(
@@ -383,6 +408,7 @@ export default function Page() {
   const { runtimeRef } = useProvaExecution({
     language,
     codeRef,
+    languageUserPinnedRef,
     addToast,
     setPyodideStatus,
     setWorkerResult,
@@ -498,6 +524,14 @@ export default function Page() {
 
         <button
           className="w-7 h-7 flex items-center justify-center rounded text-prova-muted hover:text-[#c9d1d9] hover:bg-[#21262d] transition-colors shrink-0"
+          aria-label="문의하기"
+          title="문의하기"
+          onClick={() => setContactOpen(true)}
+        >
+          <IconMail />
+        </button>
+        <button
+          className="w-7 h-7 flex items-center justify-center rounded text-prova-muted hover:text-[#c9d1d9] hover:bg-[#21262d] transition-colors shrink-0"
           data-tour="gallery"
           aria-label="예제 갤러리"
           title="예제 갤러리"
@@ -515,6 +549,14 @@ export default function Page() {
         </button>
       </header>
 
+      {/* ── Contact Modal ──────────────────────────────────── */}
+      <ContactModal
+        isOpen={contactOpen}
+        onClose={() => setContactOpen(false)}
+        currentCode={code}
+        currentStdin={stdin}
+      />
+
       {/* ── Example Gallery Modal ──────────────────────────── */}
       <ExampleGallery
         isOpen={gallery.isOpen}
@@ -525,7 +567,8 @@ export default function Page() {
         onRequestConfirm={handleGalleryCardClick}
         onCancelConfirm={gallery.cancelConfirm}
         onConfirm={() => {
-          if (gallery.confirmVariant) handleGallerySelect(gallery.confirmVariant);
+          if (gallery.confirmVariant)
+            handleGallerySelect(gallery.confirmVariant);
         }}
       />
 
@@ -549,7 +592,11 @@ export default function Page() {
             >
               <div className="flex items-center gap-2 min-w-0">
                 <span className="text-[10px] text-prova-muted uppercase tracking-widest font-medium truncate">
-                  {lang(language).js ? "algorithm.js" : lang(language).java ? "Algorithm.java" : "algorithm.py"}
+                  {lang(language).js
+                    ? "algorithm.js"
+                    : lang(language).java
+                      ? "Algorithm.java"
+                      : "algorithm.py"}
                 </span>
                 {isVisualizing && (
                   <span
@@ -568,7 +615,10 @@ export default function Page() {
                   data-tour="language"
                   className="h-7 rounded border border-prova-line bg-[#161b22] text-[11px] text-[#c9d1d9] px-2 focus:outline-none"
                   value={language}
-                  onChange={(e) => setLanguage(e.target.value as SupportedLanguage)}
+                  onChange={(e) => {
+                    setLanguageUserPinned(true);
+                    setLanguage(e.target.value as SupportedLanguage);
+                  }}
                   aria-label="코드 언어 선택"
                 >
                   <option value="python">Python</option>
@@ -715,44 +765,46 @@ export default function Page() {
                         </span>
                       </div>
                     ) : (
-                      code.split("\n").map((line, lineIdx) => {
-                        const lineNo = lineIdx + 1;
-                        const isActiveLine = lineNo === editCursorLine;
-                        return (
-                          <div
-                            key={`edit-line-${lineIdx}`}
-                            className={`flex ${isActiveLine ? "bg-[#1a2533]/55 border-l-2 border-[#58a6ff]" : "border-l-2 border-transparent"}`}
-                          >
-                            <span
-                              className={`w-9 shrink-0 text-right pr-3 select-none text-[11px] leading-5 ${
-                                isActiveLine
-                                  ? "text-[#58a6ff]"
-                                  : "text-[#4a5568]"
-                              }`}
+                      <div className={wordWrap ? undefined : "min-w-max"}>
+                        {code.split("\n").map((line, lineIdx) => {
+                          const lineNo = lineIdx + 1;
+                          const isActiveLine = lineNo === editCursorLine;
+                          return (
+                            <div
+                              key={`edit-line-${lineIdx}`}
+                              className={`flex w-full ${isActiveLine ? "bg-[#1a2533]/55 border-l-2 border-[#58a6ff]" : "border-l-2 border-transparent"}`}
                             >
-                              {lineNo}
-                            </span>
-                            <span
-                              className={`pl-2 ${wordWrap ? "whitespace-pre-wrap break-all" : "whitespace-pre"}`}
-                            >
-                              {(lang(language).js
-                                ? highlightJsLine
-                                : lang(language).java
-                                  ? highlightJavaLine
-                                  : highlightPythonLine)(line).map(
-                                (token, idx) => (
-                                  <span
-                                    key={`edit-${lineIdx}-${idx}`}
-                                    className={token.className}
-                                  >
-                                    {token.text}
-                                  </span>
-                                ),
-                              )}
-                            </span>
-                          </div>
-                        );
-                      })
+                              <span
+                                className={`w-9 shrink-0 text-right pr-3 select-none text-[11px] leading-5 ${
+                                  isActiveLine
+                                    ? "text-[#58a6ff]"
+                                    : "text-[#4a5568]"
+                                }`}
+                              >
+                                {lineNo}
+                              </span>
+                              <span
+                                className={`pl-2 ${wordWrap ? "whitespace-pre-wrap break-all" : "whitespace-pre"}`}
+                              >
+                                {(lang(language).js
+                                  ? highlightJsLine
+                                  : lang(language).java
+                                    ? highlightJavaLine
+                                    : highlightPythonLine)(line).map(
+                                  (token, idx) => (
+                                    <span
+                                      key={`edit-${lineIdx}-${idx}`}
+                                      className={token.className}
+                                    >
+                                      {token.text}
+                                    </span>
+                                  ),
+                                )}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
                     )}
                   </div>
                   <textarea
@@ -920,8 +972,8 @@ export default function Page() {
               )}
             </div>
             <div className="flex-1 min-h-0 overflow-hidden bg-[#0d1117] flex">
-              {/* Call Tree panel — shown when recursive */}
-              {isRecursive && !isAnalyzingCode && mergedTrace.length > 0 && (
+              {/* Call Tree panel — always shown when trace exists */}
+              {!isAnalyzingCode && mergedTrace.length > 0 && (
                 <>
                   <div
                     className="shrink-0 border-r border-prova-line overflow-hidden transition-all duration-150"
@@ -1201,7 +1253,7 @@ export default function Page() {
                         pyodideStatus === "ready" &&
                         !isCodeEmpty &&
                         !isStdinEmpty
-                          ? mergedTrace.length > 0
+                          ? mergedTrace.length > 0 && code === lastRunCode
                             ? "bg-[#21262d] border border-prova-line text-[#c9d1d9] hover:bg-[#262c36]"
                             : "bg-prova-green text-black hover:bg-[#4ac763]"
                           : pyodideStatus === "error"
@@ -1220,7 +1272,7 @@ export default function Page() {
                       }
                       onClick={() => {
                         if (pyodideStatus !== "ready") return;
-                        if (!lang(language).java) {
+                        if (!languageUserPinned && !lang(language).java) {
                           const runLanguage = detectLanguageFromCode(
                             code,
                             lang(language).js ? "javascript" : "python",
@@ -1255,6 +1307,7 @@ export default function Page() {
                           // ignore storage failures
                         }
                         codeRef.current = code;
+                        setLastRunCode(code);
                         resetForRun();
                         setPyodideStatus("running");
                         runtimeRef.current?.run(code, stdin);
@@ -1262,7 +1315,7 @@ export default function Page() {
                     >
                       {runButtonLabel(
                         pyodideStatus,
-                        mergedTrace.length > 0,
+                        mergedTrace.length > 0 && code === lastRunCode,
                         isCodeEmpty,
                         isStdinEmpty,
                         language,
