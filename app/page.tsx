@@ -197,27 +197,11 @@ export default function Page() {
     if (hasGraphTag) return "GRAPH" as const;
     return metadata.strategy;
   }, [metadata, displayTags]);
-  const { isRecursive, hasCallTree } = useMemo(() => {
-    if (mergedTrace.length === 0)
-      return { isRecursive: false, hasCallTree: false };
+  // 함수 호출이 하나라도 있으면 true — 자동 열기 여부에 사용
+  const hasCallTree = useMemo(() => {
+    if (mergedTrace.length === 0) return false;
     const tree = buildCallTree(mergedTrace);
-    const hasCallTree = tree.roots.length > 0;
-    // 재귀 = 동일 함수명이 트리에서 2회 이상 등장하거나, 호출 깊이가 3 이상
-    const funcCounts = new Map<string, number>();
-    function walk(nodes: typeof tree.roots) {
-      for (const n of nodes) {
-        funcCounts.set(n.func, (funcCounts.get(n.func) ?? 0) + 1);
-        walk(n.children);
-      }
-    }
-    walk(tree.roots);
-    const maxCount = Math.max(0, ...funcCounts.values());
-    const hasDeepRecursion = [...funcCounts.values()].some((c) => c >= 2);
-    const hasDeepDepth = mergedTrace.some((s) => s.scope.depth >= 4);
-    return {
-      isRecursive: hasDeepRecursion || maxCount >= 2 || hasDeepDepth,
-      hasCallTree,
-    };
+    return tree.roots.length > 0;
   }, [mergedTrace]);
 
   // 새 실행 결과가 나왔을 때 콜트리 가시성 자동 결정:
@@ -957,8 +941,8 @@ export default function Page() {
               )}
             </div>
             <div className="flex-1 min-h-0 overflow-hidden bg-[#0d1117] flex">
-              {/* Call Tree panel — shown when recursive */}
-              {isRecursive && !isAnalyzingCode && mergedTrace.length > 0 && (
+              {/* Call Tree panel — always shown when trace exists */}
+              {!isAnalyzingCode && mergedTrace.length > 0 && (
                 <>
                   <div
                     className="shrink-0 border-r border-prova-line overflow-hidden transition-all duration-150"
